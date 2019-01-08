@@ -27,15 +27,16 @@
 }
 
 .button {
-  line-height: 40px;
   min-width: 96px;
-  text-transform: uppercase;
-  color: white;
-  text-align: center;
-  font-weight: bold;
-  border: 1px solid white;
-  border-radius: 10000px;
+  line-height: 40px;
   height: 40px;
+  border: 1px solid white;
+  text-transform: uppercase;
+  text-align: center;
+  cursor: pointer;
+  font-weight: bold;
+  border-radius: 10000px;
+  color: white;
 }
 
 .button.primary {
@@ -136,14 +137,14 @@ button {
 
 body {
   box-sizing: border-box;
-  font-style: sans-serif;
-  font-family: ubuntu;
+  font-family: ubuntu sans-serif;
   margin: 0;
   padding: 0;
 }
 
 body * {
   box-sizing: border-box;
+  font-family: sans-serif;
   margin: 0;
   padding: 0;
   -ms-overflow-style: -ms-autohiding-scrollbar;

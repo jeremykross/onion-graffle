@@ -31,11 +31,11 @@
                  :height "100%"}]
    [:button {:background "none"}]
    [:body {:box-sizing "border-box"
-           :font-style "sans-serif"
-           :font-family "ubuntu"
+           :font-family "ubuntu sans-serif"
            :margin 0
            :padding 0}]
    [:body [:* {:box-sizing "border-box"
+               :font-family "sans-serif"
                :margin 0
                :padding 0
                :-ms-overflow-style "-ms-autohiding-scrollbar"}]]

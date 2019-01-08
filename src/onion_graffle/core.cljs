@@ -1,6 +1,7 @@
 (ns onion-graffle.core
   (:require
     recurrent.drivers.dom
+    clojure.set
     [onion-components.core :as onion-components]
     [onion-graffle.components :as components]
     [recurrent.core :as recurrent :include-macros true]
@@ -14,9 +15,13 @@
   
   (let [action-button (onion-components/ActionButton {} sources)
         new-resource-modal (components/NewResourceModal {} sources)
-        modal-showing?-$ (ulmus/reduce not false (:click-$ action-button))]
+        modal-showing?-$ 
+        (ulmus/merge
+          (ulmus/map (constantly false) (:creation-requests-$ new-resource-modal))
+          (ulmus/reduce not false (:click-$ action-button)))
+        nodes-$ ((state/transduce-state) state-$)]
 
-    (ulmus/subscribe! (:creation-requests-$ new-resource-modal) println)
+    (ulmus/subscribe! nodes-$ println)
 
     {:recurrent/state-$ (ulmus/map (fn [new-resource]
                                      (fn [state]
