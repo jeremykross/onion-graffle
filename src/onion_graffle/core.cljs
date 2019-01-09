@@ -19,7 +19,7 @@
         (ulmus/merge
           (ulmus/map (constantly false) (:creation-requests-$ new-resource-modal))
           (ulmus/reduce not false (:click-$ action-button)))
-        nodes-$ ((state/transduce-state) state-$)]
+        nodes-$ ((state/transduce-state) (ulmus/map :resources state-$))]
 
     (ulmus/subscribe! nodes-$ println)
 
