@@ -61,16 +61,15 @@
                            [:div {:id id
                                   :class "node"
                                   :style (util/map->css 
-                                           {:transform (util/translate position)})}
+                                           {:transform 
+                                            (util/transform 
+                                              "translate" ""
+                                              (map #(str "calc(" % "px - 50%)")
+                                                   position))})}
                             content])
                          (ulmus/zip ulmus.mouse/position-$
-                                    (:euler-$ sources)
-                                    (:content-$ sources)))
-        client-rect-$ (ulmus/map (fn [_]
-                                   (if-let [elem (.getElementById js/document id)]
-                                     (make-extents (.getBoundingClientRect elem))
-                                     []))
-                                 dom-$)]
+                                    (ulmus/signal-of [0 0 0])
+                                    (ulmus/signal-of "Foo")))]
 
     {:recurrent/dom-$ dom-$}))
 

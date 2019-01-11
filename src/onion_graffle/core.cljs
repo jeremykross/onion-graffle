@@ -4,6 +4,7 @@
     clojure.set
     [onion-components.core :as onion-components]
     [onion-graffle.components :as components]
+    [onion-graffle.util :as util]
     [recurrent.core :as recurrent :include-macros true]
     [recurrent.state :as state]
     [ulmus.signal :as ulmus]))
@@ -18,8 +19,12 @@
         modal-showing?-$ 
         (ulmus/merge
           (ulmus/map (constantly false) (:creation-requests-$ new-resource-modal))
-          (ulmus/reduce not false (:click-$ action-button)))
-        nodes-$ ((state/transduce-state) (ulmus/map :resources state-$))]
+          (ulmus/map (constantly true) (:click-$ action-button)))
+        nodes-$ ((util/transduce-state 
+                   :enter (fn [nodes [k v]]
+                            (assoc nodes 
+                                   k (components/Node props sources))))
+                 (ulmus/map :resources state-$))]
 
     (ulmus/subscribe! nodes-$ println)
 
@@ -28,16 +33,17 @@
                                        (assoc-in state [:resources (keyword (gensym))] new-resource)))
                                    (:creation-requests-$ new-resource-modal))
      :recurrent/dom-$ (ulmus/map
-                        (fn [[modal-showing? new-resource-modal-dom action-button-dom]]
-                          [:div {:id "main"}
-                           action-button-dom
-                           (if modal-showing?
-                             new-resource-modal-dom)])
+                        (fn [[modal-showing? nodes new-resource-modal-dom action-button-dom]]
+                          `[:div {:id "main"}
+                            ~@nodes
+                            ~action-button-dom
+                            ~(if modal-showing?
+                               new-resource-modal-dom)])
                         (ulmus/zip
                           modal-showing?-$
+                          (ulmus/pickzip :recurrent/dom-$ (ulmus/map vals nodes-$))
                           (:recurrent/dom-$ new-resource-modal)
                           (:recurrent/dom-$ action-button)))}))
-
 
 (defn main!
   []

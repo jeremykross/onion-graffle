@@ -40,8 +40,7 @@
                :padding 0
                :-ms-overflow-style "-ms-autohiding-scrollbar"}]]
    [:#app :#main {:width "100%"
-                  :height "100%"
-                  :padding "16px"}]])
+                  :height "100%"}]])
 
 (def Main
   [:#main {:position "relative"}])
@@ -65,8 +64,7 @@
 
 (def Node
   [:.node
-   {:box-shadow shadow
-    :border "1px solid lightgrey"
+   {:border "1px solid lightgrey"
     :border-radius "4px"
     :padding "16px"
     :position "absolute"
