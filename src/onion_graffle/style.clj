@@ -65,11 +65,22 @@
 (def Node
   [:.node
    {:border "1px solid lightgrey"
-    :border-radius "4px"
-    :padding "16px"
+    :border-radius "50%"
+    :display "flex"
+    :justify-content "center"
+    :align-items "center"
     :position "absolute"
     :transform-origin "50% 50%"
-    :user-select "none"}])
+    :transition "padding 250ms ease"
+    :user-select "none"}
+   [:&:hover {:padding "32px"}]
+   [:.outline
+    {:background "white"
+     :border "1px solid lightgrey"
+     :border-radius "50%"
+     :height "64px"
+     :width "64px"}]])
+    
 
 (def NodeContent
   [:.node-content

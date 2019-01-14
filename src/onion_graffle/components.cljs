@@ -57,6 +57,12 @@
 (recurrent/defcomponent Node
   [props sources]
   (let [id (gensym)
+        held?-$ (ulmus/merge
+                  (ulmus/map (constantly true) ((:recurrent/dom-$ sources) ".outline" "mousedown"))
+                  (ulmus/map (constantly false) ((:recurrent/dom-$ sources) ".outline" "mouseup")))
+        position-$ (ulmus/start-with! [128 128] (ulmus/sample-when ulmus.mouse/position-$ held?-$))
+        connect-$ (ulmus/map (constantly position-$) ((:recurrent/dom-$ sources) :root "moesdown"))
+        release-$ (ulmus/map (constantly position-$) ((:recurrent/dom-$ sources) :root "mouseup"))
         dom-$ (ulmus/map (fn [[position euler content]]
                            [:div {:id id
                                   :class "node"
@@ -66,10 +72,14 @@
                                               "translate" ""
                                               (map #(str "calc(" % "px - 50%)")
                                                    position))})}
+                            [:div {:class "outline"}]
                             content])
-                         (ulmus/zip ulmus.mouse/position-$
-                                    (ulmus/signal-of [0 0 0])
-                                    (ulmus/signal-of "Foo")))]
+                         (ulmus/zip 
+                           position-$
+                           (ulmus/signal-of [0 0 0])
+                           (ulmus/signal-of "")))]
 
-    {:recurrent/dom-$ dom-$}))
+    {:connect-$ connect-$
+     :release-$ release-$
+     :recurrent/dom-$ dom-$}))
 

@@ -26,7 +26,7 @@
                                    k (components/Node props sources))))
                  (ulmus/map :resources state-$))]
 
-    (ulmus/subscribe! nodes-$ println)
+    (ulmus/subscribe! (:click-$ action-button) println)
 
     {:recurrent/state-$ (ulmus/map (fn [new-resource]
                                      (fn [state]
@@ -35,8 +35,8 @@
      :recurrent/dom-$ (ulmus/map
                         (fn [[modal-showing? nodes new-resource-modal-dom action-button-dom]]
                           `[:div {:id "main"}
-                            ~@nodes
                             ~action-button-dom
+                            ~@nodes
                             ~(if modal-showing?
                                new-resource-modal-dom)])
                         (ulmus/zip
