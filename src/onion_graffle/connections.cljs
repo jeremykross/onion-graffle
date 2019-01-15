@@ -1,11 +1,11 @@
-(ns onion-graffle.connections)
+(ns onion-graffle.connections
+  (:require-macros [onion-graffle.connections :refer [defconnection]]))
 
-(def PodSpec<->PersistentVolumeClaim 
-  {:from "PodSpec"
-   :to "PersistentVolumeClaim"
+(defconnection PodSpec<->PersistentVolumeClaim 
+  {:inputs {}
    :connected? (fn [a b])
-   :connect (fn [a b])
-   :disconnect (fn [a b])})
+   :disconnect (fn [a b])
+   :connect (fn [a b inputs])})
 
 (def all
   [PodSpec<->PersistentVolumeClaim])
