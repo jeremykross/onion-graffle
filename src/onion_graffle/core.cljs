@@ -38,36 +38,59 @@
                  (ulmus/zip
                    connect-$
                    mouse/position-$))
-        connect-pairs-$ (ulmus/filter #(= (count %) 2)
+        connect-pairs-$ (ulmus/filter #(and (= (count %) 2)
+                                            (not= (:position-$ (first %))
+                                                  (:position-$ (second %))))
                           (ulmus/reduce
                             (fn [pair connection]
                               (if (= (:type connection) :connect-off)
                                 []
                                 (conj pair connection)))
                             []
-                            connect-$))]
-
-    (ulmus/subscribe! connect-pairs-$ println)
+                            connect-$))
+        relationships-$ (ulmus/reduce
+                          (fn [placed [from to]]
+                            (conj placed
+                                  [(:position-$ from)
+                                   (:position-$ to)]))
+                          []
+                          connect-pairs-$)
+        placed-lines-$ 
+        (ulmus/map
+          #(partition 2 %)
+          (ulmus/pickmap
+            (fn [relationships]
+              (apply ulmus/zip (flatten relationships)))
+            relationships-$))]
 
     {:recurrent/state-$ (ulmus/map (fn [new-resource]
                                      (fn [state]
                                        (assoc-in state [:resources (keyword (gensym))] new-resource)))
                                    (:creation-requests-$ new-resource-modal))
      :recurrent/dom-$ (ulmus/map
-                        (fn [[modal-showing? line nodes new-resource-modal-dom action-button-dom]]
-                          `[:div {:id "main"}
-                            ~action-button-dom
-                            [:svg/svg
-                              ~(if-let [[[x0 y0] [x1 y1]] line]
-                                 [:svg/line {:x1 x0 :y1 y0
-                                             :x2 x1 :y2 y1
-                                             :stroke "lightgrey"}])]
-                            ~@nodes
-                            ~(if modal-showing?
-                               new-resource-modal-dom)])
+                        (fn [[modal-showing? line placed-lines nodes new-resource-modal-dom action-button-dom]]
+                          (let [draw-curve (fn [[[x0 y0] [x1 y1]]]
+                                             [:svg/path {:d (str "M" x0 " " y0 " "
+                                                                 "Q" (/ x1 2) " " (/ y1 2) "," x1 " " y1)
+                                                         :fill "transparent"
+                                                         :stroke "lightgrey"}])
+                                draw-line (fn [[[x0 y0] [x1 y1]]]
+                                            [:svg/line {:x1 x0 :y1 y0
+                                                        :x2 x1 :y2 y1
+                                                        :stroke "lightgrey"}])]
+                            `[:div {:id "main"}
+                              ~@nodes
+                              ~action-button-dom
+                              ^{:hipo/key "svg"}
+                              [:svg/svg
+                                ~(map draw-line placed-lines)
+                                ~(if line (draw-line line))]
+                              ~(if modal-showing?
+                                 new-resource-modal-dom)]))
                         (ulmus/zip
                           modal-showing?-$
                           line-$
+                          placed-lines-$
                           (ulmus/pickzip :recurrent/dom-$ (ulmus/map vals nodes-$))
                           (:recurrent/dom-$ new-resource-modal)
                           (:recurrent/dom-$ action-button)))}))
