@@ -43,7 +43,11 @@
                   :height "100%"}]])
 
 (def Main
-  [:#main {:position "relative"}])
+  [:#main {:position "relative"}
+   [:svg {:position "absolute"
+          :height "100%"
+          :width "100%"
+          :z-index -1}]])
 
 (def NewResourceModal
   [:.new-resource-modal {:position "fixed"
@@ -64,16 +68,20 @@
 
 (def Node
   [:.node
-   {:border "1px solid lightgrey"
+   {
+    :border "1px solid lightgrey"
     :border-radius "50%"
     :display "flex"
     :justify-content "center"
     :align-items "center"
     :position "absolute"
+    :left "-1px"
+    :top "-1px"
     :transform-origin "50% 50%"
-    :transition "padding 250ms ease"
+    :transition "padding 250ms ease, border 250ms ease"
     :user-select "none"}
-   [:&:hover {:padding "32px"}]
+   [:&:hover {:border "1px solid lightgrey"
+              :padding "32px"}]
    [:.outline
     {:background "white"
      :border "1px solid lightgrey"

@@ -84,6 +84,13 @@
   position: relative;
 }
 
+#main svg {
+  position: absolute;
+  height: 100%;
+  width: 100%;
+  z-index: -1;
+}
+
 .new-resource-modal {
   min-width: 480px;
   top: 50%;
@@ -118,6 +125,7 @@
 }
 
 .node {
+  top: -1px;
   justify-content: center;
   transform-origin: 50% 50%;
   user-select: none;
@@ -126,10 +134,12 @@
   position: absolute;
   border-radius: 50%;
   display: flex;
-  transition: padding 250ms ease;
+  transition: padding 250ms ease, border 250ms ease;
+  left: -1px;
 }
 
 .node:hover {
+  border: 1px solid lightgrey;
   padding: 32px;
 }
 

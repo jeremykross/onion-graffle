@@ -58,11 +58,23 @@
   [props sources]
   (let [id (gensym)
         held?-$ (ulmus/merge
-                  (ulmus/map (constantly true) ((:recurrent/dom-$ sources) ".outline" "mousedown"))
-                  (ulmus/map (constantly false) ((:recurrent/dom-$ sources) ".outline" "mouseup")))
-        position-$ (ulmus/start-with! [128 128] (ulmus/sample-when ulmus.mouse/position-$ held?-$))
-        connect-$ (ulmus/map (constantly position-$) ((:recurrent/dom-$ sources) :root "moesdown"))
-        release-$ (ulmus/map (constantly position-$) ((:recurrent/dom-$ sources) :root "mouseup"))
+                  (ulmus/map
+                    (constantly true)
+                    ((:recurrent/dom-$ sources) ".outline" "mousedown"))
+                  (ulmus/map
+                    (constantly false)
+                    ((:recurrent/dom-$ sources) ".outline" "mouseup")))
+        position-$ (ulmus/start-with!
+                     [128 128]
+                     (ulmus/sample-when ulmus.mouse/position-$ held?-$))
+        connect-from-$ (ulmus/map
+                         (constantly {:type :connect-from
+                                      :position-$ position-$})
+                         ((:recurrent/dom-$ sources) :root "mousedown"))
+        connect-to-$ (ulmus/map
+                       (constantly {:type :connect-to
+                                    :position-$ position-$})
+                       ((:recurrent/dom-$ sources) :root "mouseup"))
         dom-$ (ulmus/map (fn [[position euler content]]
                            [:div {:id id
                                   :class "node"
@@ -79,7 +91,6 @@
                            (ulmus/signal-of [0 0 0])
                            (ulmus/signal-of "")))]
 
-    {:connect-$ connect-$
-     :release-$ release-$
+    {:connect-$ (ulmus/merge connect-from-$ connect-to-$)
      :recurrent/dom-$ dom-$}))
 
