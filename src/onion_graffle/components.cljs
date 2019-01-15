@@ -68,11 +68,13 @@
                      [128 128]
                      (ulmus/sample-when ulmus.mouse/position-$ held?-$))
         connect-from-$ (ulmus/map
-                         (constantly {:type :connect-from
+                         (constantly {:id (:id props)
+                                      :type :connect-from
                                       :position-$ position-$})
                          ((:recurrent/dom-$ sources) :root "mousedown"))
         connect-to-$ (ulmus/map
-                       (constantly {:type :connect-to
+                       (constantly {:id (:id props)
+                                    :type :connect-to
                                     :position-$ position-$})
                        ((:recurrent/dom-$ sources) :root "mouseup"))
         dom-$ (ulmus/map (fn [[position euler content]]

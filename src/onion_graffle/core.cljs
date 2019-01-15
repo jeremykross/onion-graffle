@@ -24,7 +24,7 @@
         nodes-$ ((util/transduce-state 
                    :enter (fn [nodes [k v]]
                             (assoc nodes 
-                                   k (components/Node props sources))))
+                                   k (components/Node {:id k} sources))))
                  (ulmus/map :resources state-$))
         connect-$ 
         (ulmus/merge
