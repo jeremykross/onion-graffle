@@ -116,13 +116,11 @@
              new-resource-modal-dom
              action-button-dom]]
          (let [draw-curve (fn [[[x0 y0] [x1 y1]]]
-                            ^{:hipo/key "curve"}
                             [:svg/path {:d (str "M" x0 " " y0 " "
                                                 "Q" (/ x1 2) " " (/ y1 2) "," x1 " " y1)
                                         :fill "transparent"
                                         :stroke "lightgrey"}])
                draw-line (fn [stroke [[x0 y0] [x1 y1]]]
-                           ^{:hipo/key "line"}
                            [:svg/line {:on-click #(js/console.log "foo")
                                        :x1 x0 :y1 y0
                                        :x2 x1 :y2 y1
