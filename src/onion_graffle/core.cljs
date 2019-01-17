@@ -10,7 +10,7 @@
     [ulmus.mouse :as mouse]
     [ulmus.signal :as ulmus]))
 
-(defn Main
+(defn Graffle 
   [props sources]
   
   (def state-$ (:recurrent/state-$ sources))
@@ -34,14 +34,15 @@
         selected-node-id-$
         (ulmus/merge
           (ulmus/map (fn [e]
-                       (println "HERE")
                        (.stopPropagation e)
                        (.-id (.-currentTarget e)))
                      ((:recurrent/dom-$ sources) ".node" "mousedown"))
           (ulmus/map (constantly false)
-                     ((:recurrent/dom-$ sources) ".nodes" "mousedown")))
+                     (ulmus/filter 
+                       #(= (.-currentTarget %) (.-target %))
+                       ((:recurrent/dom-$ sources) ".nodes" "mousedown"))))
 
-        info-panel (components/InformationPanel {} (assoc sources :open?-$ selected-node-id-$))
+        info-panel (components/InformationPanel {} (assoc sources :open?-$ (ulmus/start-with! false selected-node-id-$)))
 
         nodes-$
         ((util/transduce-state 
@@ -78,27 +79,16 @@
                             (conj pair connection)))
                         []
                         connect-$))
-        relationships-$
+
+        relationship-lines-$
         (ulmus/reduce
-          (fn [placed [from to]]
-            (conj placed
-                  [(:position-$ from)
-                   (:position-$ to)]))
+          (fn [lines [from to]]
+            (conj lines (components/RelationshipLine
+                          {} (assoc sources
+                                    :from-pos-$ (:position-$ from)
+                                    :to-pos-$ (:position-$ to)))))
           []
-          connect-pairs-$)
-
-        placed-lines-$ 
-        (ulmus/map
-          #(partition 2 %)
-          (ulmus/pickmap
-            (fn [relationships]
-              (apply ulmus/zip (flatten relationships)))
-            relationships-$))]
-
-
-    (ulmus/subscribe!
-      selected-node-id-$
-      println)
+          connect-pairs-$)]
 
     {:recurrent/state-$
      (ulmus/map (fn [new-resource]
@@ -115,12 +105,8 @@
              info-panel-dom
              new-resource-modal-dom
              action-button-dom]]
-         (let [draw-curve (fn [[[x0 y0] [x1 y1]]]
-                            [:svg/path {:d (str "M" x0 " " y0 " "
-                                                "Q" (/ x1 2) " " (/ y1 2) "," x1 " " y1)
-                                        :fill "transparent"
-                                        :stroke "lightgrey"}])
-               draw-line (fn [stroke [[x0 y0] [x1 y1]]]
+         (let [draw-line (fn [stroke [[x0 y0] [x1 y1]]]
+                           ^{:hipo/key "drawn-line"}
                            [:svg/line {:on-click #(js/console.log "foo")
                                        :x1 x0 :y1 y0
                                        :x2 x1 :y2 y1
@@ -128,7 +114,7 @@
                                        :stroke stroke}])]
 
            ^{:hipo/key "main"}
-           `[:div {:id "main"}
+           `[:div {:id "graffle-main" :class "graffle-main"}
              ~top-bar-dom
              ^{:hipo/key "content"}
              [:div {:class "content"}
@@ -137,16 +123,16 @@
                ~@nodes
                ^{:hipo/key "svg"}
                [:svg/svg
-                ~(map (partial draw-line "lightgrey") placed-lines)
+                ~@placed-lines
                 ~(if line (draw-line "#00a2ff" line))]
                ~action-button-dom]
               ~info-panel-dom]
-               ~(if modal-showing?
-                 new-resource-modal-dom)]))
+             ~(if modal-showing?
+                new-resource-modal-dom)]))
        (ulmus/zip
          modal-showing?-$
          line-$
-         placed-lines-$
+         (ulmus/pickzip :recurrent/dom-$ relationship-lines-$)
          (ulmus/pickzip :recurrent/dom-$ (ulmus/map vals nodes-$))
          (:recurrent/dom-$ top-bar)
          (:recurrent/dom-$ info-panel)
@@ -156,7 +142,7 @@
 (defn main!
   []
   (recurrent/start!
-    (state/with-state Main)
+    (state/with-state Graffle)
     {}
     {:recurrent/dom-$ (recurrent.drivers.dom/for-id! "app")}))
     

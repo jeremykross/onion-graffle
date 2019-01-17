@@ -97,6 +97,13 @@
     {:connect-$ (ulmus/merge connect-from-$ connect-to-$)
      :recurrent/dom-$ dom-$}))
 
+(recurrent/defcomponent RelationshipLine
+  [props sources]
+  {:recurrent/dom-$
+   (ulmus/map (fn [[[x1 y1] [x2 y2]]]
+                [:svg/line {:x1 x1 :y1 y1 :x2 x2 :y2 y2 :stroke "#d9e1ff" :stroke-width 2}])
+              (ulmus/zip (:from-pos-$ sources) (:to-pos-$ sources)))})
+
 (recurrent/defcomponent InformationPanel
   [props sources]
   {:recurrent/dom-$
@@ -110,6 +117,6 @@
   {:recurrent/dom-$
    (ulmus/signal-of
      [:div {:class "top-bar"}
-      [:div {:class "logo"} "ascension"]
+      [:div {:class "logo"} "onion"]
       [:div {:class "title"} "New Project"]
       [:div {:class "menu"}]])})

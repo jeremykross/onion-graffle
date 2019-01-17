@@ -16,17 +16,6 @@
   [:to {:opacity 1
         :transform "scale(1, 1)"}])
 
-(def LeftRight [:.left-right
-                {:display "grid"
-                 :height "100%"
-                 :max-height "100%"
-                 :grid-gap "16px"
-                 :grid-template-columns "1fr 1fr"}
-                [:.text-edit {:background "black"
-                              :padding "32px"
-                              :border (str "1px solid " dark)
-                              :border-radius "4px"}]])
-
 (def Reset
   [[:html :body {:width "100%"
                  :height "100%"}]
@@ -43,11 +32,11 @@
                :margin 0
                :padding 0
                :-ms-overflow-style "-ms-autohiding-scrollbar"}]]
-   [:#app :#main {:width "100%"
-                  :height "100%"}]])
+   [:#app :.graffle-main {:width "100%"
+                          :height "100%"}]])
 
 (def Main
-  [:#main {:display "flex"
+  [:.graffle-main {:display "flex"
            :flex-direction "column"
            :position "relative"}
    [:.content {:display "flex"
@@ -57,7 +46,7 @@
     [:.nodes {:position "relative"
               :height "100%"
               :flex 1}]]
-   [:svg {
+   [:svg {:pointer-events "none"
           :height "100%"
           :width "100%"
           :z-index -1}]])
@@ -140,23 +129,19 @@
              :text-align "center"}]
     [:.menu {:width "83px"}]])
 
-(defn styles
-  []
-  (garden/css 
-    components/ActionButton
-    components/BottomBanner
-    components/Button
-    components/TextInput
-    LeftRight
-    Main
-    NewResourceModal
-    NodeContent
-    Node
-    InformationPanel
-    TopBar
-    Reset))
+(def styles [components/ActionButton
+             components/BottomBanner
+             components/Button
+             components/TextInput
+             Main
+             NewResourceModal
+             NodeContent
+             Node
+             InformationPanel
+             TopBar
+             Reset]
 
 (defn spit-styles!
   []
-  (spit "resources/public/css/style.css" (styles)))
+  (spit "resources/public/css/style.css" (garden/css styles)))
 
