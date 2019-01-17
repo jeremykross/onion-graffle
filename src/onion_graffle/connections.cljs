@@ -1,5 +1,4 @@
-(ns onion-graffle.connections
-  (:require-macros [onion-graffle.connections :refer [defconnection]]))
+(ns onion-graffle.connections)
 
 (def PodSpec<->PersistentVolumeClaim 
   {:from "PodSpec"

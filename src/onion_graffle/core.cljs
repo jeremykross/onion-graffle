@@ -16,7 +16,6 @@
   (def state-$ (:recurrent/state-$ sources))
   
   (let [top-bar (components/TopBar {} sources)
-        info-panel (components/InformationPanel {} sources)
         action-button (onion-components/ActionButton {} sources)
         new-resource-modal (components/NewResourceModal {} sources)
         modal-showing?-$ 
@@ -30,15 +29,19 @@
             (let [bounds (.getBoundingClientRect (.-currentTarget e))]
               [(- (.-clientX e) (.-left bounds))
                (- (.-clientY e) (.-top bounds))]))
-          ((:recurrent/dom-$ sources) ".content" "mousemove"))
+          ((:recurrent/dom-$ sources) ".nodes" "mousemove"))
 
         selected-node-id-$
         (ulmus/merge
           (ulmus/map (fn [e]
+                       (println "HERE")
                        (.stopPropagation e)
                        (.-id (.-currentTarget e)))
-                     ((:recurrent/dom-$ sources) ".node" "click"))
-          (ulmus/map (constantly nil) ((:recurrent/dom-$ sources) ".content" "click")))
+                     ((:recurrent/dom-$ sources) ".node" "mousedown"))
+          (ulmus/map (constantly false)
+                     ((:recurrent/dom-$ sources) ".nodes" "mousedown")))
+
+        info-panel (components/InformationPanel {} (assoc sources :open?-$ selected-node-id-$))
 
         nodes-$
         ((util/transduce-state 
@@ -94,8 +97,8 @@
 
 
     (ulmus/subscribe!
-      ((:recurrent/dom-$ sources) "line" "click")
-      #(js/alert "CLICK!"))
+      selected-node-id-$
+      println)
 
     {:recurrent/state-$
      (ulmus/map (fn [new-resource]
@@ -113,21 +116,25 @@
              new-resource-modal-dom
              action-button-dom]]
          (let [draw-curve (fn [[[x0 y0] [x1 y1]]]
+                            ^{:hipo/key "curve"}
                             [:svg/path {:d (str "M" x0 " " y0 " "
                                                 "Q" (/ x1 2) " " (/ y1 2) "," x1 " " y1)
                                         :fill "transparent"
                                         :stroke "lightgrey"}])
                draw-line (fn [stroke [[x0 y0] [x1 y1]]]
+                           ^{:hipo/key "line"}
                            [:svg/line {:on-click #(js/console.log "foo")
                                        :x1 x0 :y1 y0
                                        :x2 x1 :y2 y1
                                        :stroke-width 2
                                        :stroke stroke}])]
 
+           ^{:hipo/key "main"}
            `[:div {:id "main"}
              ~top-bar-dom
              ^{:hipo/key "content"}
              [:div {:class "content"}
+              ^{:hipo/key "nodes"}
               [:div {:class "nodes"}
                ~@nodes
                ^{:hipo/key "svg"}

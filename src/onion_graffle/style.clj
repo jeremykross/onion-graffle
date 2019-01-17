@@ -35,6 +35,7 @@
            :box-sizing "border-box"
            :color dark
            :font-family "'Rubik', sans-serif"
+           :overflow "hidden"
            :margin 0
            :padding 0}]
    [:body [:* {:box-sizing "border-box"
@@ -79,7 +80,8 @@
 
 (def Node
   [:.node
-   {:border "1px solid transparent"
+   {
+    :border "1px solid transparent"
     :border-radius "50%"
     :display "flex"
     :justify-content "center"
@@ -112,9 +114,9 @@
 (def InformationPanel
   [:.information-panel {:background "white"
                         :border-left (str "1px solid " light)
-                        :transition "width 250ms ease"
+                        :transition "width 500ms ease"
                         :height "100%"
-                        :width 0
+                        :width "0px"
                         :z-index "5"}
    [:&.open {:width "300px"}]])
 
@@ -127,12 +129,14 @@
               :font-size "15px"
               :font-weight "bold"
               :height "88px"
+              :posiiton "relative"
               :z-index "5"}
    [:.logo {:font-size "24px"
-            :letter-spacing "4px"
-            :margin "32px"
-            :width "83px"}]
-   [:.title {:flex 1
+            :letter-spacing "3px"
+            :margin "32px"}]
+   [:.title {:position "absolute"
+             :flex 1
+             :width "100%"
              :text-align "center"}]
     [:.menu {:width "83px"}]])
 

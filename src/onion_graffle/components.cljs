@@ -99,7 +99,10 @@
 
 (recurrent/defcomponent InformationPanel
   [props sources]
-  {:recurrent/dom-$ (ulmus/signal-of [:div {:class "information-panel open"}])})
+  {:recurrent/dom-$
+   (ulmus/map (fn [open?]
+                [:div {:class (str "information-panel " (if open? "open"))}])
+              (:open?-$ sources))})
 
 
 (recurrent/defcomponent TopBar
@@ -107,6 +110,6 @@
   {:recurrent/dom-$
    (ulmus/signal-of
      [:div {:class "top-bar"}
-      [:div {:class "logo"} "onion"]
-      [:div {:class "title"} "Unsaved"]
+      [:div {:class "logo"} "ascension"]
+      [:div {:class "title"} "New Project"]
       [:div {:class "menu"}]])})
