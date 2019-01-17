@@ -4,9 +4,11 @@
     [garden.def :refer [defkeyframes]]
     [onion-components.style :as components]))
 
-(def shadow "2px 2px 4px rgba(0,0,0, 0.25)")
-(def primary "#FEA7BD")
-(def secondary "#09EDC8")
+(def shadow components/shadow)
+(def neutral "#f4f6fc")
+(def dark "#081018")
+(def light "#d9e1ff")
+(def highlight "#00a2ff")
 
 (defkeyframes FadeInAnim
   [:from {:opacity 0
@@ -21,21 +23,22 @@
                  :grid-gap "16px"
                  :grid-template-columns "1fr 1fr"}
                 [:.text-edit {:background "black"
-                              :color "lime"
                               :padding "32px"
-                              :border "1px solid lightgrey"
+                              :border (str "1px solid " dark)
                               :border-radius "4px"}]])
 
 (def Reset
   [[:html :body {:width "100%"
                  :height "100%"}]
    [:button {:background "none"}]
-   [:body {:box-sizing "border-box"
-           :font-family "ubuntu sans-serif"
+   [:body {:background neutral
+           :box-sizing "border-box"
+           :color dark
+           :font-family "'Rubik', sans-serif"
            :margin 0
            :padding 0}]
    [:body [:* {:box-sizing "border-box"
-               :font-family "sans-serif"
+               :font-family "'Rubik', sans-serif"
                :margin 0
                :padding 0
                :-ms-overflow-style "-ms-autohiding-scrollbar"}]]
@@ -43,8 +46,17 @@
                   :height "100%"}]])
 
 (def Main
-  [:#main {:position "relative"}
-   [:svg {:position "absolute"
+  [:#main {:display "flex"
+           :flex-direction "column"
+           :position "relative"}
+   [:.content {:display "flex"
+               :position "relative"
+               :flex 1
+               :height "100%"}
+    [:.nodes {:position "relative"
+              :height "100%"
+              :flex 1}]]
+   [:svg {
           :height "100%"
           :width "100%"
           :z-index -1}]])
@@ -53,9 +65,8 @@
   [:.new-resource-modal {:position "fixed"
                          :background "white"
                          :border-radius "4px"
-                         :border "1px solid lightgrey"
+                         :border (str "1px solid " dark) 
                          :box-shadow shadow
-                         :color "black"
                          :left "50%"
                          :overflow "hidden"
                          :min-width "480px"
@@ -68,8 +79,7 @@
 
 (def Node
   [:.node
-   {
-    :border "1px solid lightgrey"
+   {:border "1px solid transparent"
     :border-radius "50%"
     :display "flex"
     :justify-content "center"
@@ -80,14 +90,17 @@
     :transform-origin "50% 50%"
     :transition "padding 250ms ease, border 250ms ease"
     :user-select "none"}
-   [:&:hover {:border "1px solid lightgrey"
+   [:&:hover {:border (str "1px solid " light)
               :padding "32px"}]
    [:.outline
     {:background "white"
-     :border "1px solid lightgrey"
      :border-radius "50%"
-     :height "64px"
-     :width "64px"}]])
+     :box-shadow shadow
+     :border "1px solid transparent"
+     :height "80px"
+     :width "80px"}
+    [:&.selected {:border (str "1px solid " highlight)}]
+    ]])
     
 
 (def NodeContent
@@ -96,6 +109,32 @@
    [:p {:font-size "16px"
         :opacity 0.4}]])
 
+(def InformationPanel
+  [:.information-panel {:background "white"
+                        :border-left (str "1px solid " light)
+                        :transition "width 250ms ease"
+                        :height "100%"
+                        :width 0
+                        :z-index "5"}
+   [:&.open {:width "300px"}]])
+
+(def TopBar
+  [:.top-bar {:align-items "center"
+              :border-bottom (str "1px solid " light)
+              :display "flex"
+              :background "white"
+              :min-height "48px"
+              :font-size "15px"
+              :font-weight "bold"
+              :height "88px"
+              :z-index "5"}
+   [:.logo {:font-size "24px"
+            :letter-spacing "4px"
+            :margin "32px"
+            :width "83px"}]
+   [:.title {:flex 1
+             :text-align "center"}]
+    [:.menu {:width "83px"}]])
 
 (defn styles
   []
@@ -109,6 +148,8 @@
     NewResourceModal
     NodeContent
     Node
+    InformationPanel
+    TopBar
     Reset))
 
 (defn spit-styles!

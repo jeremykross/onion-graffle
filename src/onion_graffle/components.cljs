@@ -66,7 +66,7 @@
                     ((:recurrent/dom-$ sources) ".outline" "mouseup")))
         position-$ (ulmus/start-with!
                      [128 128]
-                     (ulmus/sample-when ulmus.mouse/position-$ held?-$))
+                     (ulmus/sample-when (:mouse-pos-$ sources) held?-$))
         connect-from-$ (ulmus/map
                          (constantly {:id (:id props)
                                       :type :connect-from
@@ -77,7 +77,7 @@
                                     :type :connect-to
                                     :position-$ position-$})
                        ((:recurrent/dom-$ sources) :root "mouseup"))
-        dom-$ (ulmus/map (fn [[position euler content]]
+        dom-$ (ulmus/map (fn [[position selected-id euler content]]
                            [:div {:id id
                                   :class "node"
                                   :style (util/map->css 
@@ -86,13 +86,27 @@
                                               "translate" ""
                                               (map #(str "calc(" % "px - 50%)")
                                                    position))})}
-                            [:div {:class "outline"}]
+                            [:div {:class (str "outline " (if (= selected-id (str id)) "selected"))}]
                             content])
                          (ulmus/zip 
                            position-$
+                           (:selected-node-id-$ sources)
                            (ulmus/signal-of [0 0 0])
                            (ulmus/signal-of "")))]
 
     {:connect-$ (ulmus/merge connect-from-$ connect-to-$)
      :recurrent/dom-$ dom-$}))
 
+(recurrent/defcomponent InformationPanel
+  [props sources]
+  {:recurrent/dom-$ (ulmus/signal-of [:div {:class "information-panel open"}])})
+
+
+(recurrent/defcomponent TopBar
+  [props sources]
+  {:recurrent/dom-$
+   (ulmus/signal-of
+     [:div {:class "top-bar"}
+      [:div {:class "logo"} "onion"]
+      [:div {:class "title"} "Unsaved"]
+      [:div {:class "menu"}]])})
