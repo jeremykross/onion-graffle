@@ -42,7 +42,9 @@
                        #(= (.-currentTarget %) (.-target %))
                        ((:recurrent/dom-$ sources) ".nodes" "mousedown"))))
 
-        info-panel (components/InformationPanel {} (assoc sources :open?-$ (ulmus/start-with! false selected-node-id-$)))
+        info-panel (components/InformationPanel
+                     {}
+                     (assoc sources :open?-$ (ulmus/start-with! false selected-node-id-$)))
 
         nodes-$
         ((util/transduce-state 
@@ -88,9 +90,25 @@
                                     :from-pos-$ (:position-$ from)
                                     :to-pos-$ (:position-$ to)))))
           []
-          connect-pairs-$)]
+          connect-pairs-$)
 
-    {:recurrent/state-$
+        selected-node-pos-$ (ulmus/pickmap
+                          (fn [[nodes id]]
+                            (get-in nodes [(keyword id) :position-$]))
+                          (ulmus/zip nodes-$ selected-node-id-$))
+
+        selected-resource-$ (ulmus/map
+                              (fn [[state id]]
+                                (get-in state [:resources (keyword id)]))
+                              (ulmus/zip (:recurrent/state-$ sources)
+                                         selected-node-id-$))]
+
+    (ulmus/subscribe! 
+      (ulmus/sample-on selected-node-pos-$ (:edit-$ info-panel))
+      println)
+
+    {:edit-$ (ulmus/sample-on selected-node-pos-$ (:edit-$ info-panel))
+     :recurrent/state-$
      (ulmus/map (fn [new-resource]
                   (fn [state]
                     (assoc-in state [:resources (keyword (gensym))] new-resource)))
@@ -113,7 +131,7 @@
                                        :stroke-width 2
                                        :stroke stroke}])]
 
-           ^{:hipo/key "main"}
+           ^{:hipo/key "graffle-main"}
            `[:div {:id "graffle-main" :class "graffle-main"}
              ~top-bar-dom
              ^{:hipo/key "content"}

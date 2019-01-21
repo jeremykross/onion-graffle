@@ -78,7 +78,7 @@
                                     :position-$ position-$})
                        ((:recurrent/dom-$ sources) :root "mouseup"))
         dom-$ (ulmus/map (fn [[position selected-id euler content]]
-                           [:div {:id id
+                           [:div {:id (name (:id props))
                                   :class "node"
                                   :style (util/map->css 
                                            {:transform 
@@ -86,7 +86,7 @@
                                               "translate" ""
                                               (map #(str "calc(" % "px - 50%)")
                                                    position))})}
-                            [:div {:class (str "outline " (if (= selected-id (str id)) "selected"))}]
+                            [:div {:class (str "outline " (if (= selected-id (str (name (:id props)))) "selected"))}]
                             content])
                          (ulmus/zip 
                            position-$
@@ -95,6 +95,7 @@
                            (ulmus/signal-of "")))]
 
     {:connect-$ (ulmus/merge connect-from-$ connect-to-$)
+     :position-$ position-$
      :recurrent/dom-$ dom-$}))
 
 (recurrent/defcomponent RelationshipLine
@@ -106,9 +107,12 @@
 
 (recurrent/defcomponent InformationPanel
   [props sources]
-  {:recurrent/dom-$
+  {:edit-$ ((:recurrent/dom-$ sources) ".button.primary" "click")
+   :recurrent/dom-$
    (ulmus/map (fn [open?]
-                [:div {:class (str "information-panel " (if open? "open"))}])
+                [:div {:class (str "information-panel " (if open? "open"))}
+                 [:div {:class "content"}
+                  [:div {:class "button primary"} "Edit"]]])
               (:open?-$ sources))})
 
 

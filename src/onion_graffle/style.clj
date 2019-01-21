@@ -1,5 +1,6 @@
 (ns onion-graffle.style
   (:require
+    garden.selectors
     [garden.core :as garden]
     [garden.def :refer [defkeyframes]]
     [onion-components.style :as components]))
@@ -9,12 +10,6 @@
 (def dark "#081018")
 (def light "#d9e1ff")
 (def highlight "#00a2ff")
-
-(defkeyframes FadeInAnim
-  [:from {:opacity 0
-          :transform "scale(0.95, 0.95)"}]
-  [:to {:opacity 1
-        :transform "scale(1, 1)"}])
 
 (def Reset
   [[:html :body {:width "100%"
@@ -37,9 +32,11 @@
 
 (def Main
   [:.graffle-main {:display "flex"
-           :flex-direction "column"
-           :position "relative"}
-   [:.content {:display "flex"
+                   :flex-direction "column"
+                   :position "relative"
+                   :height "100%"
+                   :width "100%"}
+   [(garden.selectors/> "" :.content) {:display "flex"
                :position "relative"
                :flex 1
                :height "100%"}
@@ -107,7 +104,8 @@
                         :height "100%"
                         :width "0px"
                         :z-index "5"}
-   [:&.open {:width "300px"}]])
+   [:&.open {:width "300px"}]
+   [:.content {:padding "32px"}]])
 
 (def TopBar
   [:.top-bar {:align-items "center"
@@ -138,8 +136,7 @@
              NodeContent
              Node
              InformationPanel
-             TopBar
-             Reset]
+             TopBar])
 
 (defn spit-styles!
   []
