@@ -92,20 +92,18 @@
           []
           connect-pairs-$)
 
-        selected-node-pos-$ (ulmus/pickmap
-                          (fn [[nodes id]]
-                            (get-in nodes [(keyword id) :position-$]))
-                          (ulmus/zip nodes-$ selected-node-id-$))
+        selected-node-pos-$ (ulmus/map
+                              (fn [[nodes id]]
+                                (when-let [position-$ (get-in nodes [(keyword id) :position-$])]
+                                  {:id (keyword id)
+                                   :position @position-$}))
+                              (ulmus/zip nodes-$ selected-node-id-$))
 
         selected-resource-$ (ulmus/map
                               (fn [[state id]]
                                 (get-in state [:resources (keyword id)]))
                               (ulmus/zip (:recurrent/state-$ sources)
                                          selected-node-id-$))]
-
-    (ulmus/subscribe! 
-      (ulmus/sample-on selected-node-pos-$ (:edit-$ info-panel))
-      println)
 
     {:edit-$ (ulmus/sample-on selected-node-pos-$ (:edit-$ info-panel))
      :recurrent/state-$
