@@ -86,7 +86,7 @@
                                               "translate" ""
                                               (map #(str "calc(" % "px - 50%)")
                                                    position))})}
-                            [:div {:class (str "outline " (if (= selected-id (str (name (:id props)))) "selected"))}]
+                            [:div {:class (str "outline " (if (= selected-id (:id props)) "selected"))}]
                             content])
                          (ulmus/zip 
                            position-$
