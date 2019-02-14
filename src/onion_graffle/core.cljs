@@ -23,6 +23,42 @@
                                             "id")))
                                       ((:recurrent/dom-$ sources) ".node" "click"))
 
+        selected-nodes-$ (ulmus/reduce
+                           (fn [nodes node-id]
+                             (if (nodes node-id)
+                               (disj nodes node-id)
+                               (conj nodes node-id)))
+                           #{}
+                           selected-node-id-$)
+
+        selected-resources-$ (ulmus/map
+                               (fn [[selected-nodes state]]
+                                 (into {}
+                                       (map (fn [node-id]
+                                              [node-id (state node-id)])
+                                            selected-nodes)))
+                               (ulmus/zip selected-nodes-$
+                                          (:recurrent/state-$ sources)))
+
+        nodes-$ (ulmus/reduce
+                  (fn [nodes [added removed]]
+                    (let [new-nodes 
+                          (into {} (map (fn [[k r]]
+                                          [k (components/Node
+                                               {:id k}
+                                               (assoc sources
+                                                      :selected-node-id-$ selected-node-id-$
+                                                      :selected-nodes-$ selected-nodes-$
+                                                      :mouse-pos-$ mouse/position-$))])
+                                        added))]
+                      (-> nodes
+                          (merge new-nodes)
+                          (dissoc (keys removed)))))
+                  {}
+                  (ulmus/changed-keys
+                    (:recurrent/state-$ sources)))
+
+
         connections-$ (ulmus/map
                         (fn [state]
                           (into #{}
@@ -34,43 +70,40 @@
                                     (recur (conj acc (connections/between (first resources) (first tail)))
                                            tail)))))))
                         (:recurrent/state-$ sources))
-        nodes-$ (ulmus/reduce
-                  (fn [nodes [added removed]]
-                    (let [new-nodes 
-                          (into {} (map (fn [[k r]]
-                                          [k (components/Node
-                                               {:id k}
-                                               (assoc sources
-                                                      :selected-node-id-$ selected-node-id-$
-                                                      :mouse-pos-$ mouse/position-$))])
-                                        added))]
-                      (-> nodes
-                          (merge new-nodes)
-                          (dissoc (keys removed)))))
-                  {}
-                  (ulmus/changed-keys
-                    (:recurrent/state-$ sources)))
+
         lines-$ (ulmus/reduce
-                  (fn [lines [added removed]]
+                  (fn [lines [nodes added removed]]
                     (let [new-lines
-                          (map (fn [c] [c (components/RelationshipLine
-                                            {}
-                                            {:from-pos-$ (ulmus/signal-of [0 0])
-                                             :to-pos-$ (ulmus/signal-of [100 100])})])
+                          (map (fn [c] 
+                                 (println c)
+                                 (let [id (gensym)
+                                       from ((:from c) nodes)
+                                       to ((:to c) nodes)]
+                                   [id (components/RelationshipLine
+                                         {:id id
+                                          :connection c}
+                                         {:from-pos-$ (:position-$ from)
+                                          :to-pos-$ (:position-$ to)})]))
                                added)]
                       (merge lines (into {} new-lines))))
                   {}
                   (ulmus/zip
+                    nodes-$
                     (ulmus/set-added connections-$)
                     (ulmus/set-removed connections-$)))]
 
-    (ulmus/subscribe! lines-$ (fn [c] (println "Connections:" c)))
-
     {:recurrent/dom-$ (ulmus/map
-                        (fn [nodes-dom]
-                          `[:div {:class "nodes"}
-                            ~@nodes-dom])
-                        (ulmus/pickzip :recurrent/dom-$ (ulmus/map vals nodes-$)))
+                        (fn [[nodes-dom lines-dom]]
+                          `[:div {:class "graffle-main"}
+                            ^{:hipo/key "nodes"}
+                            [:div {:class "nodes"}
+                             ~@nodes-dom]
+                            ^{:hipo/key "svg"}
+                            [:svg/svg
+                             ~@lines-dom]])
+                        (ulmus/zip
+                          (ulmus/pickzip :recurrent/dom-$ (ulmus/map vals nodes-$))
+                          (ulmus/pickzip :recurrent/dom-$ (ulmus/map vals lines-$))))
      :recurrent/state-$ (ulmus/signal-of (fn [] initial-state))}))
 
 (defn main!

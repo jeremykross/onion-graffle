@@ -27,8 +27,8 @@
                :margin 0
                :padding 0
                :-ms-overflow-style "-ms-autohiding-scrollbar"}]]
-   [:#app :.graffle-main {:width "100%"
-                          :height "100%"}]])
+   [:#app {:width "100%"
+           :height "100%"}]])
 
 (def Main
   [:.graffle-main {:display "flex"
@@ -36,17 +36,11 @@
                    :position "relative"
                    :height "100%"
                    :width "100%"}
-   [(garden.selectors/> "" :.content) {:display "flex"
-               :position "relative"
-               :flex 1
-               :height "100%"}
     [:.nodes {:position "relative"
               :height "100%"
-              :flex 1}]]
-   [:svg {:pointer-events "none"
-          :height "100%"
-          :width "100%"
-          :z-index -1}]])
+              :flex 1}]
+    [:svg {:height "100%"
+           :width "100%"}]])
 
 (def NewResourceModal
   [:.new-resource-modal {:position "fixed"
@@ -131,6 +125,7 @@
              components/BottomBanner
              components/Button
              components/TextInput
+             Reset
              Main
              NewResourceModal
              NodeContent

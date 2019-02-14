@@ -77,7 +77,7 @@
                                     :type :connect-to
                                     :position-$ position-$})
                        ((:recurrent/dom-$ sources) :root "mouseup"))
-        dom-$ (ulmus/map (fn [[position selected-id euler content]]
+        dom-$ (ulmus/map (fn [[position selected euler content]]
                            [:div {:id (name (:id props))
                                   :class "node"
                                   :style (util/map->css 
@@ -86,11 +86,11 @@
                                               "translate" ""
                                               (map #(str "calc(" % "px - 50%)")
                                                    position))})}
-                            [:div {:class (str "outline " (if (= selected-id (:id props)) "selected"))}]
+                            [:div {:class (str "outline " (if (selected (:id props)) "selected"))}]
                             content])
                          (ulmus/zip 
                            position-$
-                           (:selected-node-id-$ sources)
+                           (:selected-nodes-$ sources)
                            (ulmus/signal-of [0 0 0])
                            (ulmus/signal-of "")))]
 
@@ -102,7 +102,7 @@
   [props sources]
   {:recurrent/dom-$
    (ulmus/map (fn [[[x1 y1] [x2 y2]]]
-                [:svg/line {:x1 x1 :y1 y1 :x2 x2 :y2 y2 :stroke "#d9e1ff" :stroke-width 2}])
+                [:svg/line {:id (hash (:connection props)) :class "relationship-line" :x1 x1 :y1 y1 :x2 x2 :y2 y2 :stroke "cornflowerblue" :stroke-width 2}])
               (ulmus/zip (:from-pos-$ sources) (:to-pos-$ sources)))})
 
 (recurrent/defcomponent InformationPanel

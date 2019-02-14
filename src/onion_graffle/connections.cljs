@@ -1,6 +1,6 @@
 (ns onion-graffle.connections
   (:require-macros 
-    [onion-graffle.connections :refer [defconnection]]))
+    [onion-graffle.connections :refer [with-order]]))
 
 (def paths
   {"PodTemplateSpec" {"Deployment" [:spec :template]}})
@@ -25,13 +25,29 @@
     [(find-in look-for-first) (find-in look-for-second)]))
         
 
-(defconnection Service<->Pod
-  [service pod]
-  ["Service"] ["PodTemplateSpec" "PodSpec" "Pod"]
-  (has-all-of?
-    (get-in service [:spec :selector])
-    (get-in pod [:metadata :labels])))
+(defn make-connection
+  [desc]
+  (assoc desc
+         :connected? (with-order desc :connected?)
+         :connect (with-order desc :connect)
+         :disconnect (with-order desc :disconnect)))
 
+(def Service<->Pod (make-connection
+                     {:from ["Service"]
+                      :to ["PodTemplateSpec" "PodSpec" "Pod"]
+                      :connected? (fn [service pod]
+                                    (has-all-of?
+                                      (get-in service [:spec :selector])
+                                      (get-in pod [:metadata :labels])))
+                      :connect (fn [service pod]
+                                 [(assoc-in service [:spec :selector]
+                                            (get-in pod [:metadata :labels]))
+                                  pod])
+                      :disconnect (fn [service pod]
+                                    [(update-in service [:spec :selector]
+                                                (fn [selector]
+                                                  (apply dissoc selector (keys (get-in pod [:metadata :labels])))))
+                                     pod])}))
 
 (defn between
   [a b]

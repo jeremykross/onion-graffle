@@ -1,7 +1,7 @@
 .action-button {
   line-height: 64px;
   width: 64px;
-  right: 48px;
+  right: 32px;
   height: 64px;
   text-align: center;
   position: absolute;
@@ -9,7 +9,7 @@
   box-shadow: 2px 2px 4px rgba(0,0,0, 0.25);
   font-size: 24px;
   border-radius: 50%;
-  bottom: 48px;
+  bottom: 16px;
   background: #09EDC8;
   color: white;
 }
@@ -28,22 +28,34 @@
 }
 
 .button {
-  min-width: 96px;
+  min-width: 128px;
   line-height: 40px;
   height: 40px;
   border: 1px solid white;
-  text-transform: uppercase;
+  padding: 0 32px;
   text-align: center;
   cursor: pointer;
   font-weight: bold;
-  border-radius: 4px;
+  border-radius: 1000px;
   color: white;
+}
+
+.button.outline {
+  color: #212b35;
+  border: 1px solid #dfe3e8;
+  background: none;
 }
 
 .button.primary {
   background: black;
   border: 1px solid transparent;
   color: white;
+}
+
+.button.inverse {
+  background: white;
+  border: 1px solid #dfe3e8;
+  color: #212b35;
 }
 
 .text-input label {
@@ -64,30 +76,55 @@
   width: 100%;
 }
 
+html, body {
+  width: 100%;
+  height: 100%;
+}
+
+button {
+  background: none;
+}
+
+body {
+  background: #f4f6fc;
+  box-sizing: border-box;
+  color: #081018;
+  font-family: 'Rubik', sans-serif;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+}
+
+body * {
+  box-sizing: border-box;
+  font-family: 'Rubik', sans-serif;
+  margin: 0;
+  padding: 0;
+  -ms-overflow-style: -ms-autohiding-scrollbar;
+}
+
+#app {
+  width: 100%;
+  height: 100%;
+}
+
 .graffle-main {
   display: flex;
   flex-direction: column;
   position: relative;
-}
-
-.graffle-main  > .content {
-  display: flex;
-  position: relative;
-  flex: 1;
   height: 100%;
+  width: 100%;
 }
 
-.graffle-main  > .content .nodes {
+.graffle-main .nodes {
   position: relative;
   height: 100%;
   flex: 1;
 }
 
 .graffle-main svg {
-  pointer-events: none;
   height: 100%;
   width: 100%;
-  z-index: -1;
 }
 
 .new-resource-modal {
@@ -199,36 +236,4 @@
 
 .top-bar .menu {
   width: 83px;
-}
-
-html, body {
-  width: 100%;
-  height: 100%;
-}
-
-button {
-  background: none;
-}
-
-body {
-  background: #f4f6fc;
-  box-sizing: border-box;
-  color: #081018;
-  font-family: 'Rubik', sans-serif;
-  overflow: hidden;
-  margin: 0;
-  padding: 0;
-}
-
-body * {
-  box-sizing: border-box;
-  font-family: 'Rubik', sans-serif;
-  margin: 0;
-  padding: 0;
-  -ms-overflow-style: -ms-autohiding-scrollbar;
-}
-
-#app, .graffle-main {
-  width: 100%;
-  height: 100%;
 }
