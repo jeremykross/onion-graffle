@@ -42,7 +42,7 @@
                     (constantly false)
                     ((:recurrent/dom-$ sources) ".outline" "mouseup")))
         position-$ (ulmus/start-with!
-                     [128 128]
+                     [(rand 512) (rand 512)]
                      (ulmus/sample-when (:mouse-pos-$ sources) held?-$))
         connect-from-$ (ulmus/map
                          (constantly {:id (:id props)
