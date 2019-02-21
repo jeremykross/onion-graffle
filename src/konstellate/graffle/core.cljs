@@ -92,7 +92,9 @@
                     (ulmus/set-added connections-$)
                     (ulmus/set-removed connections-$)))]
 
-    {:recurrent/dom-$ (ulmus/map
+    {:selected-nodes-$ (ulmus/start-with! #{} selected-nodes-$)
+     :selected-resources-$ (ulmus/start-with! {} selected-resources-$)
+     :recurrent/dom-$ (ulmus/map
                         (fn [[nodes-dom lines-dom]]
                           `[:div {:class "graffle-main"}
                             ^{:hipo/key "nodes"}
