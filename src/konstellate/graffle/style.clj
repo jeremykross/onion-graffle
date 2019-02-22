@@ -34,6 +34,7 @@
   [:.graffle-main {:display "flex"
                    :flex-direction "column"
                    :position "relative"
+                   :overflow "hidden"
                    :height "100%"
                    :width "100%"}
     [:.nodes {:position "relative"
@@ -65,8 +66,14 @@
      :border "1px solid transparent"
      :height "80px"
      :width "80px"}
-    [:&.selected {:border (str "1px solid " highlight)}]
-    ]])
+    [:&.selected {:border (str "1px solid " highlight)}]]
+
+   [:.name {:line-height "100%"
+            :position "absolute"
+            :pointer-events "none"
+            :text-align "center"
+            :font-size "12px"
+            :width "100%"}]])
     
 
 (def styles [Reset

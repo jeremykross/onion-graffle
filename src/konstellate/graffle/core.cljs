@@ -1,6 +1,7 @@
 (ns konstellate.graffle.core
   (:require
     recurrent.drivers.vdom
+    recurrent.core
     [konstellate.graffle.components :as components]
     [konstellate.graffle.connections :as connections]
     [ulmus.mouse :as mouse]
@@ -14,22 +15,23 @@
    :bar {:kind "Service"
          :spec {:selector {:app "foobar"}}}})
 
-(defn Graffle
+(recurrent.core/defcomponent Graffle
   [_ sources]
   (let [selected-node-id-$ (ulmus/map (fn [e]
+                                        (.stopPropagation e)
                                         (keyword
                                           (.getAttribute
                                             (.-currentTarget e)
                                             "id")))
-                                      ((:recurrent/dom-$ sources) ".node" "click"))
+                                      (ulmus/merge
+                                        ((:recurrent/dom-$ sources) ".node" "mousedown")
+                                        ((:recurrent/dom-$ sources) ".node" "click")))
 
-        selected-nodes-$ (ulmus/reduce
-                           (fn [nodes node-id]
-                             (if (nodes node-id)
-                               (disj nodes node-id)
-                               (conj nodes node-id)))
-                           #{}
-                           selected-node-id-$)
+        selected-nodes-$ 
+        (ulmus/merge
+          (ulmus/map (constantly [])
+                     ((:recurrent/dom-$ sources) :root "click"))
+          (ulmus/map vector selected-node-id-$))
 
         selected-resources-$ (ulmus/map
                                (fn [[selected-nodes state]]
@@ -40,6 +42,13 @@
                                (ulmus/zip selected-nodes-$
                                           (:recurrent/state-$ sources)))
 
+        mouse-pos-$ (ulmus/map
+                      (fn [e]
+                        (let [bounds (.getBoundingClientRect (.-currentTarget e))]
+                          [(- (.-clientX e) (.-left bounds))
+                           (- (.-clientY e) (.-top bounds))]))
+                      ((:recurrent/dom-$ sources) :root "mousemove"))
+
         nodes-$ (ulmus/reduce
                   (fn [nodes [added removed]]
                     (let [new-nodes 
@@ -47,9 +56,12 @@
                                           [k (components/Node
                                                {:id k}
                                                (assoc sources
+                                                      :content-$ (ulmus/map
+                                                                   #(get-in % [k :metadata :name])
+                                                                   (:recurrent/state-$ sources))
                                                       :selected-node-id-$ selected-node-id-$
                                                       :selected-nodes-$ selected-nodes-$
-                                                      :mouse-pos-$ mouse/position-$))])
+                                                      :mouse-pos-$ mouse-pos-$))])
                                         added))]
                       (-> nodes
                           (merge new-nodes)
@@ -75,7 +87,6 @@
                   (fn [lines [nodes added removed]]
                     (let [new-lines
                           (map (fn [c] 
-                                 (println c)
                                  (let [id (gensym)
                                        from ((:from c) nodes)
                                        to ((:to c) nodes)]

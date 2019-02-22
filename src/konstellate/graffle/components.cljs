@@ -63,13 +63,14 @@
                                               "translate" ""
                                               (map #(str "calc(" % "px - 50%)")
                                                    position))})}
-                            [:div {:class (str "outline " (if (selected (:id props)) "selected"))}]
-                            content])
+                            [:div {:class (str "outline " (if (some #{(:id props)} selected) "selected"))}]
+                            [:div {:class "name"}
+                             content]])
                          (ulmus/zip 
                            position-$
                            (:selected-nodes-$ sources)
                            (ulmus/signal-of [0 0 0])
-                           (ulmus/signal-of "")))]
+                           (:content-$ sources)))]
 
     {:connect-$ (ulmus/merge connect-from-$ connect-to-$)
      :position-$ position-$
