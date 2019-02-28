@@ -1,5 +1,6 @@
 (ns konstellate.graffle.core
   (:require
+    clojure.set
     recurrent.drivers.vdom
     recurrent.core
     [konstellate.graffle.components :as components]
@@ -37,7 +38,7 @@
                                (fn [[selected-nodes state]]
                                  (into {}
                                        (map (fn [node-id]
-                                              [node-id (state node-id)])
+                                              [node-id (get state node-id)])
                                             selected-nodes)))
                                (ulmus/zip selected-nodes-$
                                           (:recurrent/state-$ sources)))
@@ -100,8 +101,10 @@
                   {}
                   (ulmus/zip
                     nodes-$
-                    (ulmus/set-added connections-$)
-                    (ulmus/set-removed connections-$)))]
+                    (ulmus/distinct
+                      (ulmus/map #(clojure.set/difference %2 %1) (ulmus/slice 2 connections-$)))
+                    (ulmus/distinct
+                      (ulmus/map clojure.set/difference (ulmus/slice 2 connections-$)))))]
 
     {:selected-nodes-$ (ulmus/start-with! #{} selected-nodes-$)
      :selected-resources-$ (ulmus/start-with! {} selected-resources-$)
