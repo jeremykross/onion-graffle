@@ -3,7 +3,6 @@
     recurrent.drivers.vdom
     ulmus.mouse
     [konstellate.graffle.util :as util]
-    [onion-components.core :as onion-components]
     [recurrent.core :as recurrent :include-macros true]
     [ulmus.signal :as ulmus]))
 
@@ -55,17 +54,20 @@
                                     :position-$ position-$})
                        ((:recurrent/dom-$ sources) :root "mouseup"))
         dom-$ (ulmus/map (fn [[position selected euler content]]
-                           [:div {:id (name (:id props))
-                                  :class "node"
-                                  :style (util/map->css 
-                                           {:transform 
-                                            (util/transform 
-                                              "translate" ""
-                                              (map #(str "calc(" % "px - 50%)")
-                                                   position))})}
-                            [:div {:class (str "outline " (if (some #{(:id props)} selected) "selected"))}]
-                            [:div {:class "name"}
-                             content]])
+                           (let [selected? (some #{(:id props)} selected)]
+                             [:div {:id (name (:id props))
+                                    :class (str "node "
+                                                (if selected? "selected"))
+                                    :style (util/map->css 
+                                             {:transform 
+                                              (util/transform 
+                                                "translate" ""
+                                                (map #(str "calc(" % "px - 50%)")
+                                                     position))})}
+                              [:div {:class (str "outline "
+                                                 (if selected? "selected"))}]
+                              [:div {:class "name"}
+                               content]]))
                          (ulmus/zip 
                            position-$
                            (:selected-nodes-$ sources)

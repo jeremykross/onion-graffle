@@ -3,13 +3,15 @@
     garden.selectors
     [garden.core :as garden]
     [garden.def :refer [defkeyframes]]
-    [onion-components.style :as components]))
+    [konstellate.components.style :as components]))
 
 (def shadow components/shadow)
 (def neutral "#f4f6fc")
 (def dark "#081018")
 (def light "#d9e1ff")
 (def highlight "#00a2ff")
+
+(def text "#b0bac9")
 
 (def Reset
   [[:html :body {:width "100%"
@@ -45,12 +47,13 @@
 
 (def Node
   [:.node
-   {
+   {:background "rgba(255, 255, 255, 0.8)"
     :border "1px solid transparent"
     :border-radius "50%"
     :display "flex"
     :justify-content "center"
     :align-items "center"
+    :padding "8px"
     :position "absolute"
     :left "-1px"
     :top "-1px"
@@ -60,20 +63,23 @@
    [:&:hover {:border (str "1px solid " light)
               :padding "32px"}]
    [:.outline
-    {:background "white"
+    {:background "yellow"
      :border-radius "50%"
-     :box-shadow shadow
      :border "1px solid transparent"
-     :height "80px"
-     :width "80px"}
-    [:&.selected {:border (str "1px solid " highlight)}]]
+     :height "16px"
+     :width "16px"}]
 
    [:.name {:line-height "100%"
+            :color text
+            :font-weight "bold"
             :position "absolute"
             :pointer-events "none"
+            :bottom "-32px"
+            :left "50%"
             :text-align "center"
-            :font-size "12px"
-            :width "100%"}]])
+            :white-space "nowrap"
+            :font-size "14px"
+            :transform "translateX(-50%)"}]])
     
 
 (def styles [Reset
