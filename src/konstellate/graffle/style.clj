@@ -47,7 +47,7 @@
 
 (def Node
   [:.node
-   {:background "rgba(255, 255, 255, 0.8)"
+   {:background "rgba(255, 255, 255, 0.2)"
     :border "1px solid transparent"
     :border-radius "50%"
     :display "flex"
@@ -60,10 +60,9 @@
     :transform-origin "50% 50%"
     :transition "padding 250ms ease, border 250ms ease"
     :user-select "none"}
-   [:&:hover {:border (str "1px solid " light)
-              :padding "32px"}]
+   [:&:hover {:padding "32px"}]
    [:.outline
-    {:background "yellow"
+    {:background "#fff6c2"
      :border-radius "50%"
      :border "1px solid transparent"
      :height "16px"
