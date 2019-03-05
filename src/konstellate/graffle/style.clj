@@ -73,7 +73,7 @@
             :font-weight "bold"
             :position "absolute"
             :pointer-events "none"
-            :bottom "-32px"
+            :bottom "-24px"
             :left "50%"
             :text-align "center"
             :white-space "nowrap"

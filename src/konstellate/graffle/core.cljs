@@ -72,20 +72,24 @@
                     (:recurrent/state-$ sources)))
 
 
-        connections-$ (ulmus/map
-                        (fn [state]
-                          (into #{}
-                            (flatten
-                              (loop [acc []
-                                     resources (map (fn [[k r]] (with-meta r {:key k})) state)]
-                                (let [tail (rest resources)]
-                                  (if (empty? resources) acc
-                                    (recur (conj acc (connections/between (first resources) (first tail)))
-                                           tail)))))))
-                        (:recurrent/state-$ sources))
+        connections-$ (ulmus/distinct
+                        (ulmus/map
+                          (fn [state]
+                            (into #{}
+                                  (flatten
+                                    (loop [acc []
+                                           resources (map (fn [[k r]] (with-meta r {:key k})) state)]
+                                      (let [tail (rest resources)]
+                                        (if (empty? resources) acc
+                                          (recur (conj acc (connections/between (first resources) (first tail)))
+                                                 tail)))))))
+                          (:recurrent/state-$ sources)))
 
+        ; LOOK HERE, running too many times.
+        ; Producing too many lines.
         lines-$ (ulmus/reduce
                   (fn [lines [nodes added removed]]
+                    (println "Added:" added)
                     (let [new-lines
                           (map (fn [c] 
                                  (let [id (gensym)
@@ -101,10 +105,13 @@
                   {}
                   (ulmus/zip
                     nodes-$
-                    (ulmus/distinct
-                      (ulmus/map #(clojure.set/difference %2 %1) (ulmus/slice 2 connections-$)))
-                    (ulmus/distinct
-                      (ulmus/map clojure.set/difference (ulmus/slice 2 connections-$)))))]
+                    (ulmus/map (fn [[prev curr]]
+                                 (clojure.set/difference curr prev))
+                               (ulmus/slice 2 connections-$)))
+                  (ulmus/map #(apply clojure.set/difference %) (ulmus/slice 2 connections-$)))]
+
+    (ulmus/subscribe! connections-$ println)
+    (ulmus/subscribe! lines-$ println)
 
     {:selected-nodes-$ (ulmus/start-with! #{} selected-nodes-$)
      :selected-resources-$ (ulmus/start-with! {} selected-resources-$)
@@ -118,9 +125,10 @@
                             [:svg
                              {}
                              ~@lines-dom]])
-                        (ulmus/zip
-                          (ulmus/pickzip :recurrent/dom-$ (ulmus/map vals nodes-$))
-                          (ulmus/pickzip :recurrent/dom-$ (ulmus/map vals lines-$))))
+                        (ulmus/distinct
+                          (ulmus/zip
+                            (ulmus/pickzip :recurrent/dom-$ (ulmus/map vals nodes-$))
+                            (ulmus/pickzip :recurrent/dom-$ (ulmus/map vals lines-$)))))
      :recurrent/state-$ (ulmus/signal-of (fn [] initial-state))}))
 
 (defn start!

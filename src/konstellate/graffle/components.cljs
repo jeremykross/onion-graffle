@@ -53,7 +53,7 @@
                                     :type :connect-to
                                     :position-$ position-$})
                        ((:recurrent/dom-$ sources) :root "mouseup"))
-        dom-$ (ulmus/map (fn [[position selected euler content]]
+        dom-$ (ulmus/map (fn [[position selected content]]
                            (let [selected? (some #{(:id props)} selected)]
                              [:div {:id (name (:id props))
                                     :class (str "node "
@@ -71,7 +71,6 @@
                          (ulmus/zip 
                            position-$
                            (:selected-nodes-$ sources)
-                           (ulmus/signal-of [0 0 0])
                            (:content-$ sources)))]
 
     {:connect-$ (ulmus/merge connect-from-$ connect-to-$)
@@ -82,6 +81,6 @@
   [props sources]
   {:recurrent/dom-$
    (ulmus/map (fn [[[x1 y1] [x2 y2]]]
-                [:line {:id (hash (:connection props)) :class "relationship-line" :x1 x1 :y1 y1 :x2 x2 :y2 y2 :stroke "cornflowerblue" :stroke-width 2}])
+                [:line {:id (hash (:connection props)) :class "relationship-line" :x1 x1 :y1 y1 :x2 x2 :y2 y2 :stroke "rgba(255,255,255,0.3)" :stroke-width 1}])
               (ulmus/zip (:from-pos-$ sources) (:to-pos-$ sources)))})
 
