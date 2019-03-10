@@ -54,10 +54,13 @@
                                     :position-$ position-$})
                        ((:recurrent/dom-$ sources) :root "mouseup"))
         dom-$ (ulmus/map (fn [[position selected content]]
-                           (let [selected? (some #{(:id props)} selected)]
+                           (let [selected? (some #{(:id props)} selected)
+                                 deselected? (and (not selected?)
+                                                  (not (empty? selected)))]
                              [:div {:id (name (:id props))
                                     :class (str "node "
-                                                (if selected? "selected"))
+                                                (if selected? "selected ")
+                                                (if deselected? "deselected"))
                                     :style (util/map->css 
                                              {:transform 
                                               (util/transform 

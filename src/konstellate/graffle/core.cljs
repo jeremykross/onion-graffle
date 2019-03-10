@@ -18,15 +18,16 @@
 
 (recurrent.core/defcomponent Graffle
   [_ sources]
-  (let [selected-node-id-$ (ulmus/map (fn [e]
-                                        (.stopPropagation e)
-                                        (keyword
-                                          (.getAttribute
-                                            (.-currentTarget e)
-                                            "id")))
-                                      (ulmus/merge
-                                        ((:recurrent/dom-$ sources) ".node" "mousedown")
-                                        ((:recurrent/dom-$ sources) ".node" "click")))
+  (let [selected-node-id-$
+        (ulmus/map (fn [e]
+                     (.stopPropagation e)
+                     (keyword
+                       (.getAttribute
+                         (.-currentTarget e)
+                         "id")))
+                   (ulmus/merge
+                     ((:recurrent/dom-$ sources) ".node" "mousedown")
+                     ((:recurrent/dom-$ sources) ".node" "click")))
 
         selected-nodes-$ 
         (ulmus/merge
@@ -53,17 +54,19 @@
         nodes-$ (ulmus/reduce
                   (fn [nodes [added removed]]
                     (let [new-nodes 
-                          (into {} (map (fn [[k r]]
-                                          [k (components/Node
-                                               {:id k}
-                                               (assoc sources
-                                                      :content-$ (ulmus/map
-                                                                   #(get-in % [k :metadata :name])
-                                                                   (:recurrent/state-$ sources))
-                                                      :selected-node-id-$ selected-node-id-$
-                                                      :selected-nodes-$ selected-nodes-$
-                                                      :mouse-pos-$ mouse-pos-$))])
-                                        added))]
+                          (into
+                            {} (map
+                                 (fn [[k r]]
+                                   [k (components/Node
+                                        {:id k}
+                                        (assoc sources
+                                               :content-$ (ulmus/map
+                                                            #(get-in % [k :metadata :name])
+                                                            (:recurrent/state-$ sources))
+                                               :selected-node-id-$ selected-node-id-$
+                                               :selected-nodes-$ selected-nodes-$
+                                               :mouse-pos-$ mouse-pos-$))])
+                                 added))]
                       (-> nodes
                           (merge new-nodes)
                           (dissoc (keys removed)))))
@@ -81,7 +84,9 @@
                                            resources (map (fn [[k r]] (with-meta r {:key k})) state)]
                                       (let [tail (rest resources)]
                                         (if (empty? resources) acc
-                                          (recur (conj acc (connections/between (first resources) (first tail)))
+                                          (recur (conj
+                                                   acc
+                                                   (connections/between (first resources) (first tail)))
                                                  tail)))))))
                           (:recurrent/state-$ sources)))
 
@@ -107,11 +112,8 @@
                     nodes-$
                     (ulmus/map (fn [[prev curr]]
                                  (clojure.set/difference curr prev))
-                               (ulmus/slice 2 connections-$)))
-                  (ulmus/map #(apply clojure.set/difference %) (ulmus/slice 2 connections-$)))]
-
-    (ulmus/subscribe! connections-$ println)
-    (ulmus/subscribe! lines-$ println)
+                               (ulmus/slice 2 connections-$))
+                  (ulmus/map #(apply clojure.set/difference %) (ulmus/slice 2 connections-$))))]
 
     {:selected-nodes-$ (ulmus/start-with! #{} selected-nodes-$)
      :selected-resources-$ (ulmus/start-with! {} selected-resources-$)
