@@ -52,6 +52,8 @@
     [:.name {:color highlight}]]
    [:.node.deselected {}
     [:.outline {:opacity 0.5}]]
+   [:.node:hover
+    [:.outline {:padding "16px"}]]
    [:.node
     {:background "rgba(255, 255, 255, 0.2)"
      :border "1px solid transparent"
@@ -64,15 +66,15 @@
      :left "-1px"
      :top "-1px"
      :transform-origin "50% 50%"
-     :transition "padding 250ms ease, border 250ms ease"
+     :transition "padding 800ms ease, border 250ms ease"
      :user-select "none"}
-    [:&:hover {:padding "32px"}]
+    [:&:hover {:padding "16px"}]
     [:.outline
      {:background "#fff6c2"
       :border-radius "50%"
       :border "1px solid transparent"
       :height "16px"
-      :transition "opacity 500ms ease"
+      :transition "opacity 500ms ease, padding 400ms ease"
       :width "16px"}]
 
     [:.name {:line-height "100%"
