@@ -17,7 +17,7 @@
   [[:html :body {:width "100%"
                  :height "100%"}]
    [:button {:background "none"}]
-   [:body {:background neutral
+   [:body {:background "black"
            :box-sizing "border-box"
            :color dark
            :font-family "'Rubik', sans-serif"
@@ -51,7 +51,7 @@
                 :opacity 1}]
     [:.name {:color highlight}]]
    [:.node.deselected {}
-    [:.outline {:opacity 0.5}]]
+    [:.outline {:background "#a2a18a"}]]
    [:.node:hover
     [:.outline {:padding "16px"}]]
    [:.node
@@ -74,7 +74,7 @@
       :border-radius "50%"
       :border "1px solid transparent"
       :height "16px"
-      :transition "opacity 500ms ease, padding 400ms ease"
+      :transition "background 500ms ease, opacity 500ms ease, padding 400ms ease"
       :width "16px"}]
 
     [:.name {:line-height "100%"

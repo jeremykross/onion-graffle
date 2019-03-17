@@ -8,7 +8,7 @@ button {
 }
 
 body {
-  background: #f4f6fc;
+  background: black;
   box-sizing: border-box;
   color: #081018;
   font-family: 'Rubik', sans-serif;
@@ -34,6 +34,7 @@ body * {
   display: flex;
   flex-direction: column;
   position: relative;
+  overflow: hidden;
   height: 100%;
   width: 100%;
 }
@@ -49,6 +50,31 @@ body * {
   width: 100%;
 }
 
+.node.selected {
+
+}
+
+.node.selected .outline {
+  background: #00a2ff;
+  opacity: 1;
+}
+
+.node.selected .name {
+  color: #00a2ff;
+}
+
+.node.deselected {
+
+}
+
+.node.deselected .outline {
+  background: #a2a18a;
+}
+
+.node:hover .outline {
+  padding: 16px;
+}
+
 .node {
   top: -1px;
   justify-content: center;
@@ -56,27 +82,38 @@ body * {
   user-select: none;
   border: 1px solid transparent;
   align-items: center;
+  padding: 8px;
   position: absolute;
   border-radius: 50%;
   display: flex;
-  transition: padding 250ms ease, border 250ms ease;
+  transition: padding 800ms ease, border 250ms ease;
+  background: rgba(255, 255, 255, 0.2);
   left: -1px;
 }
 
 .node:hover {
-  border: 1px solid #d9e1ff;
-  padding: 32px;
+  padding: 16px;
 }
 
 .node .outline {
-  background: white;
+  background: #fff6c2;
   border-radius: 50%;
-  box-shadow: 2px 2px 4px rgba(0,0,0, 0.25);
   border: 1px solid transparent;
-  height: 80px;
-  width: 80px;
+  height: 16px;
+  transition: background 500ms ease, opacity 500ms ease, padding 400ms ease;
+  width: 16px;
 }
 
-.node .outline.selected {
-  border: 1px solid #00a2ff;
+.node .name {
+  line-height: 100%;
+  text-align: center;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  position: absolute;
+  font-weight: bold;
+  font-size: 16px;
+  bottom: -32px;
+  pointer-events: none;
+  color: rgba(255,255,255,0.5);
+  left: 50%;
 }

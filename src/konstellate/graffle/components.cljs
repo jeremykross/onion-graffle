@@ -1,6 +1,6 @@
 (ns konstellate.graffle.components
   (:require
-    recurrent.drivers.vdom
+    recurrent.drivers.rum
     ulmus.mouse
     [konstellate.graffle.util :as util]
     [recurrent.core :as recurrent :include-macros true]
@@ -61,12 +61,12 @@
                                     :class (str "node "
                                                 (if selected? "selected ")
                                                 (if deselected? "deselected"))
-                                    :style (util/map->css 
-                                             {:transform 
-                                              (util/transform 
-                                                "translate" ""
-                                                (map #(str "calc(" % "px - 50%)")
-                                                     position))})}
+                                    :style 
+                                    {:transform 
+                                     (util/transform 
+                                       "translate" ""
+                                       (map #(str "calc(" % "px - 50%)")
+                                            position))}}
                               [:div {:class (str "outline "
                                                  (if selected? "selected"))}]
                               [:div {:class "name"}

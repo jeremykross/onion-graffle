@@ -1,7 +1,7 @@
 (ns konstellate.graffle.core
   (:require
     clojure.set
-    recurrent.drivers.vdom
+    recurrent.drivers.rum
     recurrent.core
     [konstellate.graffle.components :as components]
     [konstellate.graffle.connections :as connections]
@@ -12,8 +12,10 @@
 
 (def initial-state
   {:foo {:kind "Deployment"
+         :metadata {:name "foo"}
          :spec {:template {:metadata {:labels {:app "foobar"}}}}}
    :bar {:kind "Service"
+         :metadata {:name "bar"}
          :spec {:selector {:app "foobar"}}}})
 
 (recurrent.core/defcomponent Graffle
@@ -33,7 +35,8 @@
         (ulmus/merge
           (ulmus/map (constantly [])
                      ((:recurrent/dom-$ sources) :root "click"))
-          (ulmus/map vector selected-node-id-$))
+          (ulmus/map vector selected-node-id-$)
+          (:selected-nodes-$ sources))
 
         selected-resources-$ (ulmus/map
                                (fn [[selected-nodes state]]
@@ -94,7 +97,6 @@
         ; Producing too many lines.
         lines-$ (ulmus/reduce
                   (fn [lines [nodes added removed]]
-                    (println "Added:" added)
                     (let [new-lines
                           (map (fn [c] 
                                  (let [id (gensym)
@@ -138,5 +140,8 @@
   (recurrent/start!
     (state/with-state Graffle)
     {}
-    {:recurrent/dom-$ (recurrent.drivers.vdom/for-id! "app")}))
+    {:selected-nodes-$ (ulmus/signal-of [])
+     :recurrent/dom-$ (recurrent.drivers.rum/create! "app")}))
   
+
+;(.addEventListener js/document "DOMContentLoaded" start!)

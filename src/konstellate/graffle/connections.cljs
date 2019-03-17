@@ -1,6 +1,64 @@
 (ns konstellate.graffle.connections
   (:require-macros 
-    [konstellate.graffle.connections :refer [with-order]]))
+    [clojure.string :as string]
+    [konstellate.graffle.connections :refer [swagger-definitions with-order]]))
+
+(def definitions (swagger-definitions))
+
+(defn name-only
+  [full]
+  (last (string/split (str full) #"\.")))
+
+(defn kind-at-path
+  [definitions outer-kind path]
+  (loop [outer-kind outer-kind
+         path path]
+    (if (empty? path)
+      (if outer-kind
+        (keyword (name-only outer-kind)))
+      (let [spec (get definitions outer-kind) 
+            prop (first path)
+            basic-type (get-in spec [:properties prop :type])
+            next-kind (get-in spec [:properties prop :$ref])]
+        (recur
+          (or
+            next-kind
+            basic-type)
+          (rest path))))))
+
+(def test-resource
+  {:apiVersion "v1"
+   :kind "Pod"
+   :metadata {:name "dapi-test-pod"}
+   :spec
+   {:containers
+    [{:name "test-container"
+      :image "k8s.gcr.io/busybox"
+      :command ["/bin/sh" "-c" "env"]
+      :env
+      [{:name "SPECIAL_LEVEL_KEY"
+        :valueFrom
+        {:configMapKeyRef
+         {:name "special-config"
+          :key "special.how"}}}
+       {:name "LOG_LEVEL"
+        :valueFrom
+        {:configMapKeyRef
+         {:name "env-config"
+          :key "log_level"}}}]}]
+    :restartPolicy "Never"}})
+
+(defn walk
+  ([x] (walk [] x))
+  ([path x]
+   (cond
+     (map? x)
+     (doseq [[k v] x]
+       (walk (conj path k) v))
+     :else
+       (println (kind-at-path definitions x path)))))
+
+
 
 (def paths
   {"PodTemplateSpec" {"Deployment" [:spec :template]}})
@@ -50,15 +108,20 @@
                                                   (apply dissoc selector (keys (get-in pod [:metadata :labels])))))
                                      pod])}))
 
+(def Pod<->Config (make-connection
+                    {:from ["ConfigMap" "Secret"]
+                     :to ["Pod"]}))
+
 (defn between
-  [a b]
-  (reduce (fn [acc c]
-            (if ((:connected? c) a b)
-              (conj acc
-                    {:type (:type c)
-                     :from (:key (meta a))
-                     :to (:key (meta b))})
-              acc))
-          []
-          [Service<->Pod]))
+  ([a b] (between nil a b))
+  ([swagger a b]
+   (reduce (fn [acc c]
+             (if ((:connected? c) a b)
+               (conj acc
+                     {:type (:type c)
+                      :from (:key (meta a))
+                      :to (:key (meta b))})
+               acc))
+           []
+           [Service<->Pod])))
 
