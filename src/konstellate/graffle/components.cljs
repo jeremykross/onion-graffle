@@ -70,7 +70,8 @@
                               [:div {:class (str "outline "
                                                  (if selected? "selected"))}]
                               [:div {:class "name"}
-                               content]]))
+                               [:span (:kind content)]
+                               (get-in content [:metadata :name])]]))
                          (ulmus/zip 
                            position-$
                            (:selected-nodes-$ sources)
@@ -83,7 +84,21 @@
 (recurrent/defcomponent RelationshipLine
   [props sources]
   {:recurrent/dom-$
-   (ulmus/map (fn [[[x1 y1] [x2 y2]]]
-                [:line {:id (hash (:connection props)) :class "relationship-line" :x1 x1 :y1 y1 :x2 x2 :y2 y2 :stroke "rgba(255,255,255,0.3)" :stroke-width 1}])
-              (ulmus/zip (:from-pos-$ sources) (:to-pos-$ sources)))})
+   (ulmus/map (fn [[selected-relations [x1 y1] [x2 y2]]]
+                (let [selected? (some #{(keyword (str (hash (:connection props))))} selected-relations)]
+                  [:g {}
+                   [:line
+                    {:class "relationship-line"
+                     :x1 x1 :y1 y1 :x2 x2 :y2 y2
+                     :stroke (if selected? "#00a2ff" "#838383")
+                     :stroke-width (if selected? 4 2)}]
+                   [:line {:id (hash (:connection props))
+                           :class "relationship-click-target"
+                           :x1 x1 :y1 y1 :x2 x2 :y2 y2
+                           :stroke "transparent"
+                           :stroke-width 20}]]))
+              (ulmus/zip
+                (:selected-relations-$ sources)
+                (:from-pos-$ sources)
+                (:to-pos-$ sources)))})
 

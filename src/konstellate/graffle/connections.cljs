@@ -1,67 +1,14 @@
 (ns konstellate.graffle.connections
+  (:require
+    [clojure.string :as string])
   (:require-macros 
-    [clojure.string :as string]
-    [konstellate.graffle.connections :refer [swagger-definitions with-order]]))
-
-(def definitions (swagger-definitions))
-
-(defn name-only
-  [full]
-  (last (string/split (str full) #"\.")))
-
-(defn kind-at-path
-  [definitions outer-kind path]
-  (loop [outer-kind outer-kind
-         path path]
-    (if (empty? path)
-      (if outer-kind
-        (keyword (name-only outer-kind)))
-      (let [spec (get definitions outer-kind) 
-            prop (first path)
-            basic-type (get-in spec [:properties prop :type])
-            next-kind (get-in spec [:properties prop :$ref])]
-        (recur
-          (or
-            next-kind
-            basic-type)
-          (rest path))))))
-
-(def test-resource
-  {:apiVersion "v1"
-   :kind "Pod"
-   :metadata {:name "dapi-test-pod"}
-   :spec
-   {:containers
-    [{:name "test-container"
-      :image "k8s.gcr.io/busybox"
-      :command ["/bin/sh" "-c" "env"]
-      :env
-      [{:name "SPECIAL_LEVEL_KEY"
-        :valueFrom
-        {:configMapKeyRef
-         {:name "special-config"
-          :key "special.how"}}}
-       {:name "LOG_LEVEL"
-        :valueFrom
-        {:configMapKeyRef
-         {:name "env-config"
-          :key "log_level"}}}]}]
-    :restartPolicy "Never"}})
-
-(defn walk
-  ([x] (walk [] x))
-  ([path x]
-   (cond
-     (map? x)
-     (doseq [[k v] x]
-       (walk (conj path k) v))
-     :else
-       (println (kind-at-path definitions x path)))))
-
-
+    [konstellate.graffle.connections :refer [defconnection with-order]]))
 
 (def paths
-  {"PodTemplateSpec" {"Deployment" [:spec :template]}})
+  {"PodTemplateSpec" {"Deployment" [:spec :template]
+                      "ReplicationController" [:spec :template]}
+   "PodSpec" {"Deployment" [:spec :template :spec]
+              "ReplicationController" [:spec :template :spec]}})
 
 (defn has-all-of?
   [a b]
@@ -84,44 +31,108 @@
     [(find-in look-for-first) (find-in look-for-second)]))
         
 
-(defn make-connection
-  [desc]
-  (assoc desc
-         :connected? (with-order desc :connected?)
-         :connect (with-order desc :connect)
-         :disconnect (with-order desc :disconnect)))
+(defconnection Service<->Pod
+  {:from ["Service"]
+   :to ["PodTemplateSpec" "Pod"]
+   :connections (fn [service pod]
+                  (if (has-all-of?
+                        (get-in service [:spec :selector])
+                        (get-in pod [:metadata :labels]))
+                    [{}]
+                    []))
+   :connect (fn [service pod]
+              [(assoc-in service [:spec :selector]
+                         (get-in pod [:metadata :labels]))
+               pod])
+   :disconnect (fn [service pod]
+                 [(update-in service [:spec :selector]
+                             (fn [selector]
+                               (apply dissoc selector (keys (get-in pod [:metadata :labels])))))
+                  pod])})
 
-(def Service<->Pod (make-connection
-                     {:from ["Service"]
-                      :to ["PodTemplateSpec" "PodSpec" "Pod"]
-                      :connected? (fn [service pod]
-                                    (has-all-of?
-                                      (get-in service [:spec :selector])
-                                      (get-in pod [:metadata :labels])))
-                      :connect (fn [service pod]
-                                 [(assoc-in service [:spec :selector]
-                                            (get-in pod [:metadata :labels]))
-                                  pod])
-                      :disconnect (fn [service pod]
-                                    [(update-in service [:spec :selector]
-                                                (fn [selector]
-                                                  (apply dissoc selector (keys (get-in pod [:metadata :labels])))))
-                                     pod])}))
+; does this work?
+(defconnection Config<->Env
+  {:from ["ConfigMap" "Secret"]
+   :to ["PodSpec" "Pod"]
+   :connections (fn [config pod]
+                  (let [config-name (get-in config [:metadata :name])
+                        env (flatten (map :env (:containers pod)))
+                        value-from (map :valueFrom env)]
+                    (filter #(= (:name (or (:configMapKeyRef %)
+                                           (:secretKeyRef %)))
+                                config-name) value-from)))
+   :connect (fn [config pod])
+   :disconnect (fn [config pod])})
 
-(def Pod<->Config (make-connection
-                    {:from ["ConfigMap" "Secret"]
-                     :to ["Pod"]}))
+(defconnection Config<->Volume
+  {:from ["ConfigMap" "Secret"]
+   :to ["PodSpec" "Pod"]
+   :connections (fn [config pod]
+                  (println "HERE?")
+                  (filter
+                    (fn [v]
+                      (let [connected-name (or (get-in v [:secret :secretName])
+                                               (get-in v [:configMap :name]))]
+                        (= connected-name (get-in config [:metadata :name]))))
+                    (:volumes pod)))
+   :connect (fn [config pod])
+   :disconnect (fn [config pod])})
+
+(defconnection PersistentVolumeClaim<->Volume
+  {:from ["PersistentVolumeClaim"]
+   :to ["PodSpec" "Pod"]
+   :connections (fn [pvc pod]
+                  (println "vc:" pvc)
+                  (filter (fn [v]
+                            (= (get-in v [:persistentVolumeClaim :claimName])
+                               (get-in pvc [:metadata :name])))
+                          (:volumes pod)))})
+
+(defconnection ServiceAccount<->Pod
+  {:from ["ServiceAccount"]
+   :to ["PodSpec" "Pod"]
+   :connections (fn [service-account pod]
+                  (if (= (:serviceAccountName pod) (get-in service-account [:metadata :name]))
+                    [{}]
+                    []))})
+
+(defconnection Role<->RoleBinding
+  {:from ["Role"]
+   :to ["RoleBinding"]
+   :connections (fn [role role-binding]
+                  (if (= (get-in role-binding [:roleRef :name])
+                         (get-in role [:metadata :name]))
+                    [{}]
+                    []))})
+
+(defconnection ServiceAccount<->RoleBinding
+  {:from ["ServiceAccount"]
+   :to ["RoleBinding"]
+   :connections (fn [service-account role-binding]
+                  (filter (fn [subject]
+                            (println "subject:" subject)
+                            (and (= (:kind subject) "ServiceAccount")
+                                 (= (:name subject) (get-in service-account [:metadata :name]))
+                                 (= (:namespace subject) (get-in service-account [:metadata :namespace]))))
+                          (:subjects role-binding)))})
+
+; StorageClass to volumeClaimTemplate
 
 (defn between
   ([a b] (between nil a b))
   ([swagger a b]
    (reduce (fn [acc c]
-             (if ((:connected? c) a b)
-               (conj acc
-                     {:type (:type c)
-                      :from (:key (meta a))
-                      :to (:key (meta b))})
-               acc))
+             (let [connections ((:connections c) a b)]
+               (concat acc
+                       (map (fn [c] {:data c
+                                     :from (:key (meta a))
+                                     :to (:key (meta b))}) connections))))
            []
-           [Service<->Pod])))
+           [Service<->Pod
+            ServiceAccount<->Pod
+            ServiceAccount<->RoleBinding
+            Role<->RoleBinding
+            PersistentVolumeClaim<->Volume
+            Config<->Volume
+            Config<->Env])))
 

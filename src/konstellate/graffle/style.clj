@@ -43,7 +43,8 @@
               :height "100%"
               :flex 1}]
     [:svg {:height "100%"
-           :width "100%"}]])
+           :width "100%"}
+     [:.relationship-line {:transition "stroke 1000ms ease, stroke-width 1000ms ease"}]]])
 
 (def Node
   [[:.node.selected {}
@@ -74,20 +75,28 @@
       :border-radius "50%"
       :border "1px solid transparent"
       :height "16px"
-      :transition "background 500ms ease, opacity 500ms ease, padding 400ms ease"
+      :transition "background 1000ms ease, opacity 1000ms ease, padding 400ms ease"
       :width "16px"}]
 
-    [:.name {:line-height "100%"
-             :color "rgba(255,255,255,0.5)"
-             :font-weight "bold"
-             :position "absolute"
-             :pointer-events "none"
-             :bottom "-32px"
-             :left "50%"
+    [:.name 
+     {:line-height "100%"
+      :color "white"
+      :font-weight "bold"
+      :position "absolute"
+      :pointer-events "none"
+      :bottom "-40px"
+      :left "50%"
+      :text-align "center"
+      :white-space "nowrap"
+      :font-size "12px"
+      :transition "color 1000ms ease"
+      :transform "translateX(-50%)"}
+     [:span {:color "rgba(255,255,255,0.5)"
+             :display "block"
+             :font-size "10px"
              :text-align "center"
-             :white-space "nowrap"
-             :font-size "16px"
-             :transform "translateX(-50%)"}]]])
+             :margin-bottom "4px"
+             :text-transform "uppercase"}]]]])
 
 
 (def styles [Reset

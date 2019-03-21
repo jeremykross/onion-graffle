@@ -2,6 +2,7 @@
   (:require
     clojure.set
     recurrent.drivers.rum
+    recurrent.drivers.http
     recurrent.core
     [konstellate.graffle.components :as components]
     [konstellate.graffle.connections :as connections]
@@ -10,33 +11,56 @@
     [recurrent.core :as recurrent]
     [recurrent.state :as state]))
 
+(def swagger-endpoint "https://raw.githubusercontent.com/kubernetes/kubernetes/master/api/openapi-spec/swagger.json")
+
 (def initial-state
   {:foo {:kind "Deployment"
          :metadata {:name "foo"}
-         :spec {:template {:metadata {:labels {:app "foobar"}}}}}
+         :spec {:template {:spec {:containers [{:env [{:valueFrom {:configMapKeyRef {:name "baz"}}}]}]}
+                           :metadata {:labels {:app "foobar"}}}}}
+   :baz {:kind "ConfigMap"
+         :metadata {:name "baz"}}
    :bar {:kind "Service"
          :metadata {:name "bar"}
          :spec {:selector {:app "foobar"}}}})
 
 (recurrent.core/defcomponent Graffle
   [_ sources]
-  (let [selected-node-id-$
-        (ulmus/map (fn [e]
-                     (.stopPropagation e)
-                     (keyword
-                       (.getAttribute
-                         (.-currentTarget e)
-                         "id")))
-                   (ulmus/merge
-                     ((:recurrent/dom-$ sources) ".node" "mousedown")
-                     ((:recurrent/dom-$ sources) ".node" "click")))
+  (let [get-id-fn (fn [e]
+                    (.stopPropagation e)
+                    (keyword
+                      (.getAttribute (.-currentTarget e) "id")))
+
+        selected-node-id-$
+        (ulmus/map
+          get-id-fn
+          (ulmus/merge
+            ((:recurrent/dom-$ sources) ".node" "mousedown")
+            ((:recurrent/dom-$ sources) ".node" "click")))
+
+        selected-relation-id-$
+        (ulmus/map
+          get-id-fn
+          (ulmus/merge
+            ((:recurrent/dom-$ sources) ".relationship-click-target" "mousedown")
+            ((:recurrent/dom-$ sources) ".relationship-click-target" "click")))
 
         selected-nodes-$ 
         (ulmus/merge
           (ulmus/map (constantly [])
-                     ((:recurrent/dom-$ sources) :root "click"))
+                     (ulmus/merge
+                       ((:recurrent/dom-$ sources) :root "click")
+                       ((:recurrent/dom-$ sources) ".relationship-click-target" "click")))
           (ulmus/map vector selected-node-id-$)
           (:selected-nodes-$ sources))
+
+        selected-relations-$
+        (ulmus/merge
+          (ulmus/map (constantly [])
+                     (ulmus/merge
+                       ((:recurrent/dom-$ sources) :root "click")
+                       ((:recurrent/dom-$ sources) ".node" "click")))
+          (ulmus/map vector selected-relation-id-$))
 
         selected-resources-$ (ulmus/map
                                (fn [[selected-nodes state]]
@@ -64,7 +88,7 @@
                                         {:id k}
                                         (assoc sources
                                                :content-$ (ulmus/map
-                                                            #(get-in % [k :metadata :name])
+                                                            #(get % k)
                                                             (:recurrent/state-$ sources))
                                                :selected-node-id-$ selected-node-id-$
                                                :selected-nodes-$ selected-nodes-$
@@ -81,51 +105,59 @@
         connections-$ (ulmus/distinct
                         (ulmus/map
                           (fn [state]
-                            (into #{}
-                                  (flatten
-                                    (loop [acc []
-                                           resources (map (fn [[k r]] (with-meta r {:key k})) state)]
-                                      (let [tail (rest resources)]
-                                        (if (empty? resources) acc
-                                          (recur (conj
-                                                   acc
-                                                   (connections/between (first resources) (first tail)))
-                                                 tail)))))))
-                          (:recurrent/state-$ sources)))
+                            (println "Recalc:" state)
 
-        ; LOOK HERE, running too many times.
-        ; Producing too many lines.
+                            (let [with-key (into {} (map (fn [[k v]]
+                                                           [k (with-meta v {:key k})]) state))
+                                  to-check (map-indexed (fn [i [k v]]
+                                                          [v (subvec (into [] (vals with-key)) i)])
+                                                        with-key)
+                                  conn
+                                  (flatten
+                                    (map (fn [[r others]]
+                                           (map #(connections/between r %) others))
+                                         to-check))]
+                              (into #{} conn)))
+                          (ulmus/distinct
+                            (:recurrent/state-$ sources))))
+
         lines-$ (ulmus/reduce
-                  (fn [lines [nodes added removed]]
-                    (let [new-lines
-                          (map (fn [c] 
-                                 (let [id (gensym)
-                                       from ((:from c) nodes)
-                                       to ((:to c) nodes)]
-                                   [id (components/RelationshipLine
-                                         {:id id
-                                          :connection c}
-                                         {:from-pos-$ (:position-$ from)
-                                          :to-pos-$ (:position-$ to)})]))
-                               added)]
-                      (merge lines (into {} new-lines))))
+                  (fn [lines change]
+                    (if (:added (meta change))
+                      (let [new-lines
+                            (map (fn [c] 
+                                   (let [id (gensym)
+                                         from ((:from c) @nodes-$)
+                                         to ((:to c) @nodes-$)]
+                                     [id (components/RelationshipLine
+                                           {:id id
+                                            :connection c}
+                                           {:selected-relations-$ selected-relations-$
+                                            :from-pos-$ (:position-$ from)
+                                            :to-pos-$ (:position-$ to)})]))
+                                 change)]
+                        (merge lines (into {} new-lines)))
+                      lines))
                   {}
-                  (ulmus/zip
-                    nodes-$
+                  (ulmus/merge
                     (ulmus/map (fn [[prev curr]]
-                                 (clojure.set/difference curr prev))
+                                 (with-meta
+                                   (clojure.set/difference curr prev)
+                                   {:added true}))
                                (ulmus/slice 2 connections-$))
-                  (ulmus/map #(apply clojure.set/difference %) (ulmus/slice 2 connections-$))))]
+                    (ulmus/map #(with-meta (apply clojure.set/difference %)
+                                           {:removed true})
+                                           (ulmus/slice 2 connections-$))))]
 
     {:selected-nodes-$ (ulmus/start-with! #{} selected-nodes-$)
      :selected-resources-$ (ulmus/start-with! {} selected-resources-$)
+     :selected-relations-$ (ulmus/start-with! #{} selected-relations-$)
+     :swagger-$ (ulmus/signal-of [:get])
      :recurrent/dom-$ (ulmus/map
                         (fn [[nodes-dom lines-dom]]
                           `[:div {:class "graffle-main"}
-                            ^{:hipo/key "nodes"}
                             [:div {:class "nodes"}
                              ~@nodes-dom]
-                            ^{:hipo/key "svg"}
                             [:svg
                              {}
                              ~@lines-dom]])
@@ -141,6 +173,9 @@
     (state/with-state Graffle)
     {}
     {:selected-nodes-$ (ulmus/signal-of [])
+     :swagger-$ (recurrent.drivers.http/create!
+                  swagger-endpoint
+                  {:with-credentials? false})
      :recurrent/dom-$ (recurrent.drivers.rum/create! "app")}))
   
 
