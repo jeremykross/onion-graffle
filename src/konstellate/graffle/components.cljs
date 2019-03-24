@@ -85,14 +85,18 @@
   [props sources]
   {:recurrent/dom-$
    (ulmus/map (fn [[selected-relations [x1 y1] [x2 y2]]]
-                (let [selected? (some #{(keyword (str (hash (:connection props))))} selected-relations)]
+                (let [connection-hash (hash
+                                        (select-keys
+                                          (:connection props)
+                                          [:from :to]))
+                      selected? (some #{(keyword (str connection-hash))} selected-relations)]
                   [:g {}
                    [:line
                     {:class "relationship-line"
                      :x1 x1 :y1 y1 :x2 x2 :y2 y2
                      :stroke (if selected? "#00a2ff" "#838383")
                      :stroke-width (if selected? 4 2)}]
-                   [:line {:id (hash (:connection props))
+                   [:line {:id connection-hash
                            :class "relationship-click-target"
                            :x1 x1 :y1 y1 :x2 x2 :y2 y2
                            :stroke "transparent"

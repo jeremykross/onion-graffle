@@ -38,17 +38,9 @@
                   (if (has-all-of?
                         (get-in service [:spec :selector])
                         (get-in pod [:metadata :labels]))
-                    [{}]
-                    []))
-   :connect (fn [service pod]
-              [(assoc-in service [:spec :selector]
-                         (get-in pod [:metadata :labels]))
-               pod])
-   :disconnect (fn [service pod]
-                 [(update-in service [:spec :selector]
-                             (fn [selector]
-                               (apply dissoc selector (keys (get-in pod [:metadata :labels])))))
-                  pod])})
+                    [{
+                      :desc "The selector on this service matches the key/value pairs in the Pod or PodSpec."
+                      :info (get-in pod [:metadata :labels])}]))})
 
 ; does this work?
 (defconnection Config<->Env
@@ -60,29 +52,23 @@
                         value-from (map :valueFrom env)]
                     (filter #(= (:name (or (:configMapKeyRef %)
                                            (:secretKeyRef %)))
-                                config-name) value-from)))
-   :connect (fn [config pod])
-   :disconnect (fn [config pod])})
+                                config-name) value-from)))})
 
 (defconnection Config<->Volume
   {:from ["ConfigMap" "Secret"]
    :to ["PodSpec" "Pod"]
    :connections (fn [config pod]
-                  (println "HERE?")
                   (filter
                     (fn [v]
                       (let [connected-name (or (get-in v [:secret :secretName])
                                                (get-in v [:configMap :name]))]
                         (= connected-name (get-in config [:metadata :name]))))
-                    (:volumes pod)))
-   :connect (fn [config pod])
-   :disconnect (fn [config pod])})
+                    (:volumes pod)))})
 
 (defconnection PersistentVolumeClaim<->Volume
   {:from ["PersistentVolumeClaim"]
    :to ["PodSpec" "Pod"]
    :connections (fn [pvc pod]
-                  (println "vc:" pvc)
                   (filter (fn [v]
                             (= (get-in v [:persistentVolumeClaim :claimName])
                                (get-in pvc [:metadata :name])))
@@ -110,7 +96,6 @@
    :to ["RoleBinding"]
    :connections (fn [service-account role-binding]
                   (filter (fn [subject]
-                            (println "subject:" subject)
                             (and (= (:kind subject) "ServiceAccount")
                                  (= (:name subject) (get-in service-account [:metadata :name]))
                                  (= (:namespace subject) (get-in service-account [:metadata :namespace]))))

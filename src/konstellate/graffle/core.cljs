@@ -102,10 +102,10 @@
                     (:recurrent/state-$ sources)))
 
 
+        ; need to id these based on from-to?
         connections-$ (ulmus/distinct
                         (ulmus/map
                           (fn [state]
-                            (println "Recalc:" state)
 
                             (let [with-key (into {} (map (fn [[k v]]
                                                            [k (with-meta v {:key k})]) state))
@@ -120,6 +120,17 @@
                               (into #{} conn)))
                           (ulmus/distinct
                             (:recurrent/state-$ sources))))
+
+        selected-connections-$ (ulmus/map
+                                 (fn [[selected-relations connections]]
+                                   (let [connection-hash-fn #(keyword (str (hash (select-keys % [:to :from]))))]
+                                     (filter (fn [c]
+                                               (some #{(connection-hash-fn c)} selected-relations))
+                                             connections)))
+                                 (ulmus/zip
+                                   selected-relations-$
+                                   connections-$))
+
 
         lines-$ (ulmus/reduce
                   (fn [lines change]
@@ -152,6 +163,7 @@
     {:selected-nodes-$ (ulmus/start-with! #{} selected-nodes-$)
      :selected-resources-$ (ulmus/start-with! {} selected-resources-$)
      :selected-relations-$ (ulmus/start-with! #{} selected-relations-$)
+     :selected-connections-$ selected-connections-$
      :swagger-$ (ulmus/signal-of [:get])
      :recurrent/dom-$ (ulmus/map
                         (fn [[nodes-dom lines-dom]]

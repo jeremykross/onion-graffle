@@ -19,14 +19,20 @@
          data#))))
 
 (defmacro make-connection
-  [desc]
-  `(assoc ~desc
-          :connections (with-order ~desc :connections)
-          :connect (with-order ~desc :connect)
-          :disconnect (with-order ~desc :disconnect)))
+  [conn n desc]
+  `(assoc ~conn
+          :connections 
+          (fn [from# to#]
+            (map
+              (fn [c#] (assoc c# 
+                              :desc ~desc
+                              :title ~n))
+              ((with-order ~conn :connections)
+               from# to#)))
+          :connect (with-order ~conn :connect)
+          :disconnect (with-order ~conn :disconnect)))
 
 (defmacro defconnection
-  [n desc]
+  [n desc conn]
   `(def ~n
-     (make-connection ~(assoc desc
-                              :type (str n)))))
+     (make-connection ~conn ~(str n) desc)))
