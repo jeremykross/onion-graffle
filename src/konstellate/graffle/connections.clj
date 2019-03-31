@@ -4,35 +4,38 @@
     [clojure.string :as string]))
 
 (defmacro with-order
-  [desc fk]
+  ([desc fk] `(with-order ~desc ~fk []))
+  ([desc fk default]
   `(fn [from# to# & data#]
      (apply 
        (fn [a# b#]
          (if (not (and a# b#))
-           []
+           ~default
            ((~fk ~desc) a# b#)))
        (concat
          (konstellate.graffle.connections/ordered
            (:from ~desc)
            (:to ~desc)
            from# to#)
-         data#))))
+         data#)))))
 
 (defmacro make-connection
-  [conn n desc]
+  [conn n]
   `(assoc ~conn
           :connections 
           (fn [from# to#]
             (map
               (fn [c#] (assoc c# 
-                              :desc ~desc
                               :title ~n))
               ((with-order ~conn :connections)
                from# to#)))
+          :connectables (with-order ~conn :connectables {:from [] :to []})
           :connect (with-order ~conn :connect)
           :disconnect (with-order ~conn :disconnect)))
 
 (defmacro defconnection
-  [n desc conn]
+  [n conn]
   `(def ~n
-     (make-connection ~conn ~(str n) desc)))
+     (make-connection 
+       ~conn
+       ~(str n))))

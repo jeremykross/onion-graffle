@@ -4,6 +4,7 @@
     recurrent.drivers.rum
     recurrent.drivers.http
     recurrent.core
+    [konstellate.components.core :as core-components]
     [konstellate.graffle.components :as components]
     [konstellate.graffle.connections :as connections]
     [ulmus.mouse :as mouse]
@@ -131,7 +132,6 @@
                                    selected-relations-$
                                    connections-$))
 
-
         lines-$ (ulmus/reduce
                   (fn [lines change]
                     (if (:added (meta change))
@@ -158,23 +158,75 @@
                                (ulmus/slice 2 connections-$))
                     (ulmus/map #(with-meta (apply clojure.set/difference %)
                                            {:removed true})
-                                           (ulmus/slice 2 connections-$))))]
+                                           (ulmus/slice 2 connections-$))))
 
-    {:selected-nodes-$ (ulmus/start-with! #{} selected-nodes-$)
+    creation-line-$ (ulmus/map
+                      (fn [connection]
+                        (if (= (:type connection) :connect-from)
+                          (components/RelationshipLine
+                            {:id :connection-line
+                             :connection {}}
+                            {:selected-relations-$ selected-relations-$
+                             :from-pos-$ (:position-$ connection)
+                             :to-pos-$ mouse-pos-$})
+                          {:recurrent/dom-$ (ulmus/signal-of [])}))
+                      (ulmus/merge
+                        (ulmus/map 
+                          (constantly {:type :break})
+                          ((:recurrent/dom-$ sources) :root "mouseup"))
+                        (ulmus/pickmerge :connect-$ (ulmus/distinct (ulmus/map vals nodes-$)))))
+    connection-requests-$ (ulmus/pickmerge :connect-$ (ulmus/distinct (ulmus/map vals nodes-$)))
+
+    valid-connections-$ 
+    (ulmus/filter (fn [[from to]]
+                    (and 
+                      (= (:type from) :connect-from)
+                      (= (:type to) :connect-to)
+                      (not= (:id from) (:id to))))
+                  (ulmus/slice 2 connection-requests-$))
+
+    resource-connections-$
+    (ulmus/map
+      (fn [[state c]]
+        (map #(get state (:id %)) c))
+      (ulmus/zip
+        (:recurrent/state-$ sources)
+        valid-connections-$))
+
+
+    modal (components/ConnectionModal {} (assoc (select-keys sources [:recurrent/dom-$])
+                                                :resource-connections-$ resource-connections-$))
+
+    modal-shown?-$ 
+    (ulmus/merge
+      (ulmus/map
+        (constantly false)
+        (:connect-$ modal))
+      (ulmus/map
+        (constantly true)
+        valid-connections-$))]
+
+    {:connections-requests-$ (ulmus/pickmerge :connect-$ (ulmus/distinct (ulmus/map vals nodes-$)))
+     :selected-nodes-$ (ulmus/start-with! #{} selected-nodes-$)
      :selected-resources-$ (ulmus/start-with! {} selected-resources-$)
      :selected-relations-$ (ulmus/start-with! #{} selected-relations-$)
      :selected-connections-$ selected-connections-$
      :swagger-$ (ulmus/signal-of [:get])
      :recurrent/dom-$ (ulmus/map
-                        (fn [[nodes-dom lines-dom]]
+                        (fn [[modal modal-shown? creation-line-dom nodes-dom lines-dom]]
                           `[:div {:class "graffle-main"}
+                            ~(if modal-shown? modal)
                             [:div {:class "nodes"}
                              ~@nodes-dom]
                             [:svg
                              {}
+                             ~creation-line-dom
                              ~@lines-dom]])
                         (ulmus/distinct
                           (ulmus/zip
+                            (:recurrent/dom-$ modal)
+                            modal-shown?-$
+                            (ulmus/pickmap :recurrent/dom-$ creation-line-$)
                             (ulmus/pickzip :recurrent/dom-$ (ulmus/map vals nodes-$))
                             (ulmus/pickzip :recurrent/dom-$ (ulmus/map vals lines-$)))))
      :recurrent/state-$ (ulmus/signal-of (fn [] initial-state))}))

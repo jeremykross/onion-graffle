@@ -13,6 +13,12 @@
 
 (def text "#b0bac9")
 
+(defkeyframes FadeInAnim
+  [:from {:opacity 0
+          :transform "scale(0.95, 0.95)"}]
+  [:to {:opacity 1
+        :transform "scale(1,1)"}])
+
 (def Reset
   [[:html :body {:width "100%"
                  :height "100%"}]
@@ -98,8 +104,35 @@
              :margin-bottom "4px"
              :text-transform "uppercase"}]]]])
 
+(def ConnectionModalContent
+  [:.connection-modal-content
+   {:box-shadow shadow}
+   [:.padded {:padding "32px"}]
+   [:h3
+    {:font-size "20px"
+     :letter-spacing "1px"}]
+
+   [:.picker {:display "grid"
+              :grid-template-columns "auto auto"
+              :grid-gap "40px"
+              :margin "52px 0 32px"}]
+   [:select {:width "420px"}]
+   [:.banner {:align-items "center"
+              :background "#081018"
+              :height "82px"
+              :display "flex"
+              :justify-content "flex-end"}
+    [:.button {:margin-right "32px"
+               :width "136px"}]]])
 
 (def styles [Reset
+             components/Button
+             components/Modal
+             components/SelectionModal
+             components/Select
+             components/ModalFadeIn
+             ConnectionModalContent
+             FadeInAnim
              Main
              Node])
 

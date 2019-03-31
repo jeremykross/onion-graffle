@@ -34,6 +34,12 @@
 (defconnection Service<->Pod
   {:from ["Service"]
    :to ["PodTemplateSpec" "Pod"]
+   :desc "The selector on this service matches the key/value pairs in the Pod or PodSpec."
+   :connectables (fn [service pod]
+                   {:from [[:labels]]
+                    :to [[:selector]]})
+   :connect (fn [service pod])
+   :disconnect (fn [service pod])
    :connections (fn [service pod]
                   (if (has-all-of?
                         (get-in service [:spec :selector])
@@ -121,3 +127,6 @@
             Config<->Volume
             Config<->Env])))
 
+
+(defn possible
+  [a b])

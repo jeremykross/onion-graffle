@@ -3,6 +3,7 @@
     recurrent.drivers.rum
     ulmus.mouse
     [konstellate.graffle.util :as util]
+    [konstellate.components.core :as core-components]
     [recurrent.core :as recurrent :include-macros true]
     [ulmus.signal :as ulmus]))
 
@@ -105,4 +106,55 @@
                 (:selected-relations-$ sources)
                 (:from-pos-$ sources)
                 (:to-pos-$ sources)))})
+
+(defn ConnectionModal
+  [props sources]
+  (let [connectables-$ (ulmus/map
+                         (fn [[a b]]
+                           (println a))
+                         (:resource-connections-$ sources))
+
+        from-select (core-components/Select
+                      {}
+                      (assoc (select-keys sources [:recurrent/dom-$])
+                             :label-$ (ulmus/signal-of "From")
+                             :options-$ (ulmus/signal-of
+                                          [{:label "One"
+                                            :value "One"}
+                                           {:label "Two"
+                                            :value "Two"}])))
+        to-select (core-components/Select
+                    {}
+                    (assoc (select-keys sources [:recurrent/dom-$])
+                           :label-$ (ulmus/signal-of "To")
+                           :options-$ (ulmus/signal-of
+                                        [{:value "One"}
+                                         {:value "Two"}])))
+
+        content-$ (ulmus/map 
+                    (fn [[from-select to-select]]
+                      [:div {:class "connection-modal-content"}
+                       [:div {:class "padded"}
+                         [:h3 {} "Connect foo to bar"]
+                         [:div {:class "picker"}
+                          from-select
+                          to-select]
+                         [:p {} "The X on Y"]]
+                       [:div {:class "banner"}
+                        [:div {:class "connect button primary"}
+                         "Connect"]]])
+                    (ulmus/zip
+                      (:recurrent/dom-$ from-select)
+                      (:recurrent/dom-$ to-select)))
+
+        connect-$ ((:recurrent/dom-$ sources)
+                   ".button.connect" "click")]
+
+    (assoc 
+      (core-components/Modal
+        {}
+        (assoc (select-keys sources [:recurrent/dom-$])
+               :dom-$ content-$))
+      :connect-$ connect-$)))
+
 

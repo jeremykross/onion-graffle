@@ -30,6 +30,155 @@ body * {
   height: 100%;
 }
 
+.button {
+  min-width: 128px;
+  line-height: 40px;
+  height: 40px;
+  border: 1px solid white;
+  padding: 0 32px;
+  text-align: center;
+  cursor: pointer;
+  font-weight: bold;
+  border-radius: 1000px;
+  color: white;
+}
+
+.button.outline {
+  color: #212b35;
+  border: 1px solid #dfe3e8;
+  background: none;
+}
+
+.button.primary {
+  background: #00a2ff;
+  border: 1px solid transparent;
+  color: white;
+}
+
+.button.inverse {
+  background: white;
+  border: 1px solid #dfe3e8;
+  color: #212b35;
+}
+
+.modal-underlay {
+  position: absolute;
+  background: rgba(23, 13, 15, 0.8);
+  left: 0;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  z-index: 1;
+}
+
+.modal-underlay .modal {
+  top: 48px;
+  transform: translateX(-50%);
+  position: absolute;
+  animation: ModalFadeIn 500ms ease;
+  z-index: 2;
+  box-shadow: shadow;
+  border-radius: 4px;
+  background: white;
+  left: 50%;
+}
+
+.selection-modal input {
+
+}
+
+.select {
+
+}
+
+.select label {
+  color: #212b35;
+  display: block;
+  font-size: 12px;
+  font-weight: bold;
+  letter-spacing: 2px;
+  margin-bottom: 4px;
+  opacity: 0.5;
+  text-transform: uppercase;
+}
+
+.select select {
+  appearance: none;
+  width: 100%;
+  height: 56px;
+  -webkit-appearance: none;
+  user-select: none;
+  border: 1px solid lightgrey;
+  padding: 0 16px;
+  outline: none;
+  font-size: 16px;
+  border-radius: 4px;
+  background: white;
+}
+
+@keyframes ModalFadeIn {
+
+  from {
+    opacity: 0;
+  }
+  
+  to {
+    opacity: 1;
+  }
+
+}
+
+.connection-modal-content {
+  box-shadow: 2px 2px 4px rgba(0,0,0, 0.25);
+}
+
+.connection-modal-content .padded {
+  padding: 32px;
+}
+
+.connection-modal-content h3 {
+  font-size: 20px;
+  letter-spacing: 1px;
+}
+
+.connection-modal-content .picker {
+  display: grid;
+  grid-template-columns: auto auto;
+  grid-gap: 40px;
+  margin: 52px 0 32px;
+}
+
+.connection-modal-content select {
+  width: 420px;
+}
+
+.connection-modal-content .banner {
+  align-items: center;
+  background: #081018;
+  height: 82px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.connection-modal-content .banner .button {
+  margin-right: 32px;
+  width: 136px;
+}
+
+@keyframes FadeInAnim {
+
+  from {
+    opacity: 0;
+    transform: scale(0.95, 0.95);
+  }
+  
+  to {
+    opacity: 1;
+    transform: scale(1,1);
+  }
+
+}
+
 .graffle-main {
   display: flex;
   flex-direction: column;
@@ -48,6 +197,10 @@ body * {
 .graffle-main svg {
   height: 100%;
   width: 100%;
+}
+
+.graffle-main svg .relationship-line {
+  transition: stroke 1000ms ease, stroke-width 1000ms ease;
 }
 
 .node.selected {
@@ -100,7 +253,7 @@ body * {
   border-radius: 50%;
   border: 1px solid transparent;
   height: 16px;
-  transition: background 500ms ease, opacity 500ms ease, padding 400ms ease;
+  transition: background 1000ms ease, opacity 1000ms ease, padding 400ms ease;
   width: 16px;
 }
 
@@ -111,9 +264,19 @@ body * {
   white-space: nowrap;
   position: absolute;
   font-weight: bold;
-  font-size: 16px;
-  bottom: -32px;
+  font-size: 12px;
+  bottom: -40px;
   pointer-events: none;
-  color: rgba(255,255,255,0.5);
+  transition: color 1000ms ease;
+  color: white;
   left: 50%;
+}
+
+.node .name span {
+  color: rgba(255,255,255,0.5);
+  display: block;
+  font-size: 10px;
+  text-align: center;
+  margin-bottom: 4px;
+  text-transform: uppercase;
 }

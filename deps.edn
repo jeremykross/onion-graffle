@@ -2,8 +2,9 @@
         clj-http {:mvn/version "3.9.1"}
         cljsjs/js-yaml {:mvn/version "3.3.1-0"}
         garden {:mvn/version "1.3.6"}
-        konstellate/components {:git/url "https://github.com/konstellate/components"
-                                :sha "c45cc14f1e2f454608c65007f45a0c8387114f48"}
+        konstellate/components {:local/root "/home/jkross/Projects/konstellate/components"}
+                              ;  :git/url "https://github.com/konstellate/components"
+                              ;  :sha "c45cc14f1e2f454608c65007f45a0c8387114f48"}
         recurrent {:local/root "/home/jkross/Projects/recurrent"}
         ulmus {:local/root "/home/jkross/Projects/ulmus"}}
  :paths ["src" "target" "resources"]}
