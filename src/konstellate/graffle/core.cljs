@@ -17,16 +17,15 @@
 (def initial-state
   {:foo {:kind "Deployment"
          :metadata {:name "foo"}
-         :spec {:template {:spec {:containers [{:env [{:valueFrom {:configMapKeyRef {:name "baz"}}}]}]}
+         :spec {:template {:spec {:containers []}
                            :metadata {:labels {:app "foobar"}}}}}
    :baz {:kind "ConfigMap"
          :metadata {:name "baz"}}
    :bar {:kind "Service"
-         :metadata {:name "bar"}
-         :spec {:selector {:app "foobar"}}}})
+         :metadata {:name "bar"}}})
 
 (recurrent.core/defcomponent Graffle
-  [_ sources]
+  [props sources]
   (let [get-id-fn (fn [e]
                     (.stopPropagation e)
                     (keyword
@@ -188,7 +187,7 @@
     resource-connections-$
     (ulmus/map
       (fn [[state c]]
-        (map #(get state (:id %)) c))
+        (map #(with-meta (get state (:id %)) (select-keys % [:id])) c))
       (ulmus/zip
         (:recurrent/state-$ sources)
         valid-connections-$))
@@ -229,7 +228,17 @@
                             (ulmus/pickmap :recurrent/dom-$ creation-line-$)
                             (ulmus/pickzip :recurrent/dom-$ (ulmus/map vals nodes-$))
                             (ulmus/pickzip :recurrent/dom-$ (ulmus/map vals lines-$)))))
-     :recurrent/state-$ (ulmus/signal-of (fn [] initial-state))}))
+     :recurrent/state-$ 
+     (ulmus/merge
+       (ulmus/signal-of (fn [] (or (:initial-state props) initial-state)))
+       (ulmus/map (fn [[[from to] connection from-data to-data]]
+                    (println "CONNECTION:" connection)
+                    (fn [state]
+                      (let [[connected-from connected-to] ((:connect connection) from to)]
+                        (-> state
+                            (assoc (:id (meta connected-from)) connected-from)
+                            (assoc (:id (meta connected-to)) connected-to)))))
+                  (:connect-$ modal)))}))
 
 (defn start!
   []

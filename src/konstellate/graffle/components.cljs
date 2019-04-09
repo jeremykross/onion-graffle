@@ -3,6 +3,7 @@
     recurrent.drivers.rum
     ulmus.mouse
     [konstellate.graffle.util :as util]
+    [konstellate.graffle.connections :as conn]
     [konstellate.components.core :as core-components]
     [recurrent.core :as recurrent :include-macros true]
     [ulmus.signal :as ulmus]))
@@ -107,54 +108,111 @@
                 (:from-pos-$ sources)
                 (:to-pos-$ sources)))})
 
-(defn ConnectionModal
+(recurrent/defcomponent-1 {:recurrent/portal true} ConnectionModal
   [props sources]
   (let [connectables-$ (ulmus/map
                          (fn [[a b]]
-                           (println a))
+                           (conn/connectables a b))
                          (:resource-connections-$ sources))
+
+        connectable-kvs-$ (ulmus/map #(reduce merge %)
+                                     connectables-$)
+
+        from-$ (ulmus/map first (:resource-connections-$ sources))
+        to-$ (ulmus/map second (:resource-connections-$ sources))
 
         from-select (core-components/Select
                       {}
                       (assoc (select-keys sources [:recurrent/dom-$])
-                             :label-$ (ulmus/signal-of "From")
-                             :options-$ (ulmus/signal-of
-                                          [{:label "One"
-                                            :value "One"}
-                                           {:label "Two"
-                                            :value "Two"}])))
+                             :label-$ (ulmus/map
+                                        #(str 
+                                           (:kind %) " - " 
+                                           (get-in %
+                                                   [:metadata :name]))
+                                        from-$)
+                             :options-$ 
+                             (ulmus/map
+                               (fn [connectables]
+                                 (map (fn [k]
+                                        {:value (str (name k))})
+                                      (keys connectables)))
+                               connectable-kvs-$)))
+
         to-select (core-components/Select
                     {}
                     (assoc (select-keys sources [:recurrent/dom-$])
-                           :label-$ (ulmus/signal-of "To")
-                           :options-$ (ulmus/signal-of
-                                        [{:value "One"}
-                                         {:value "Two"}])))
+                           :label-$ (ulmus/map
+                                      #(str
+                                         (:kind %) " - "
+                                         (get-in %
+                                                 [:metadata :name]))
+                                      to-$)
+                           :options-$ (ulmus/map
+                                        (fn [[connectables from]]
+                                          (map (fn [target]
+                                                 {:value
+                                                  (str (name target))})
+                                               (get connectables from)))
+                                        (ulmus/zip
+                                          connectable-kvs-$
+                                          (:value-$ from-select)))))
+
+        connection-type-$ (ulmus/map
+                            (fn [[connectables from to]] 
+                              (some
+                                (fn [c]
+                                  (when (some #{to} (get c from))
+                                    (:connection (meta c))))
+                                connectables))
+                            (ulmus/zip
+                              connectables-$
+                              (:value-$ from-select)
+                              (:value-$ to-select)))
+
+        message-$ (ulmus/map :desc connection-type-$)
 
         content-$ (ulmus/map 
-                    (fn [[from-select to-select]]
+                    (fn [[[connecting-from connecting-to]
+                          message from-select to-select]]
                       [:div {:class "connection-modal-content"}
                        [:div {:class "padded"}
-                         [:h3 {} "Connect foo to bar"]
+                         [:h3 {} (str "Connect "
+                                      (get-in connecting-from
+                                              [:metadata :name])
+                                      " with " 
+                                      (get-in connecting-to
+                                              [:metadata :name]))]
                          [:div {:class "picker"}
                           from-select
                           to-select]
-                         [:p {} "The X on Y"]]
+                         [:p {} message]]
                        [:div {:class "banner"}
                         [:div {:class "connect button primary"}
                          "Connect"]]])
                     (ulmus/zip
+                      (:resource-connections-$ sources)
+                      message-$
                       (:recurrent/dom-$ from-select)
                       (:recurrent/dom-$ to-select)))
 
-        connect-$ ((:recurrent/dom-$ sources)
-                   ".button.connect" "click")]
+        connect-$ 
+        (ulmus/sample-on 
+          (ulmus/zip
+            (:resource-connections-$ sources)
+            connection-type-$
+            (:value-$ from-select)
+            (:value-$ to-select))
+          ((:recurrent/dom-$ sources)
+           ".button.connect" "click"))]
 
-    (assoc 
-      (core-components/Modal
-        {}
-        (assoc (select-keys sources [:recurrent/dom-$])
-               :dom-$ content-$))
-      :connect-$ connect-$)))
+    (ulmus/subscribe! connectables-$ #(println "Connectables: " %))
+
+    {:connect-$ connect-$
+     :recurrent/dom-$ (ulmus/map (fn [content]
+                                   [:div {:class "modal-underlay"}
+                                    [:div {:class "modal"}
+                                     [:h1 {} ""]
+                                     content]])
+                                 content-$)}))
 
 

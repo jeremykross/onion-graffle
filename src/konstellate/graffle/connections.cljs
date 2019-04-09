@@ -20,7 +20,10 @@
   (if (= (:kind outer) inner)
     outer
     (if-let [path-to-inner (get (paths inner) (:kind outer))]
-      (get-in outer path-to-inner))))
+      (with-meta 
+        (get-in outer path-to-inner)
+        {:path-to-inner path-to-inner
+         :outer outer}))))
 
 (defn ordered
   [look-for-first look-for-second a b]
@@ -34,12 +37,13 @@
 (defconnection Service<->Pod
   {:from ["Service"]
    :to ["PodTemplateSpec" "Pod"]
-   :desc "The selector on this service matches the key/value pairs in the Pod or PodSpec."
+   :desc "Requests to this service will be forwarded to the pods on the associated workload."
    :connectables (fn [service pod]
-                   {:from [[:labels]]
-                    :to [[:selector]]})
-   :connect (fn [service pod])
-   :disconnect (fn [service pod])
+                   {"metadata.labels" ["spec.selector"]})
+   :connect (fn [service pod]
+              [(assoc-in service [:spec :selector]
+                         (get-in pod [:metadata :labels]))
+               (:outer (meta pod))])
    :connections (fn [service pod]
                   (if (has-all-of?
                         (get-in service [:spec :selector])
@@ -109,6 +113,16 @@
 
 ; StorageClass to volumeClaimTemplate
 
+
+(def connections
+  [Service<->Pod
+   ServiceAccount<->Pod
+   ServiceAccount<->RoleBinding
+   Role<->RoleBinding
+   PersistentVolumeClaim<->Volume
+   Config<->Volume
+   Config<->Env])
+
 (defn between
   ([a b] (between nil a b))
   ([swagger a b]
@@ -119,14 +133,15 @@
                                      :from (:key (meta a))
                                      :to (:key (meta b))}) connections))))
            []
-           [Service<->Pod
-            ServiceAccount<->Pod
-            ServiceAccount<->RoleBinding
-            Role<->RoleBinding
-            PersistentVolumeClaim<->Volume
-            Config<->Volume
-            Config<->Env])))
+           connections)))
 
+(defn connectables
+  [a b]
+  (reduce (fn [acc c]
+            (let [connectables ((:connectables c) a b)]
+              (conj acc connectables)))
+          []
+          connections))
 
 (defn possible
   [a b])
