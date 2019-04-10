@@ -112,6 +112,7 @@
   [props sources]
   (let [connectables-$ (ulmus/map
                          (fn [[a b]]
+                           (println "Recalc connectables!")
                            (conn/connectables a b))
                          (:resource-connections-$ sources))
 
@@ -133,9 +134,8 @@
                              :options-$ 
                              (ulmus/map
                                (fn [connectables]
-                                 (map (fn [k]
-                                        {:value (str (name k))})
-                                      (keys connectables)))
+                                 (println "CONNECTABLES:" connectables)
+                                 (keys connectables))
                                connectable-kvs-$)))
 
         to-select (core-components/Select
@@ -149,10 +149,14 @@
                                       to-$)
                            :options-$ (ulmus/map
                                         (fn [[connectables from]]
-                                          (map (fn [target]
-                                                 {:value
-                                                  (str (name target))})
-                                               (get connectables from)))
+                                          (println "from:" (str from))
+                                          (println "conn:" (get (into {} 
+                                                                 (map (fn [[k v]] [(:value k) v])
+                                                                      connectables)) from))
+                                          (get (into {} 
+                                                     (map (fn [[k v]] [(:value k) v])
+                                                          connectables))
+                                               from))
                                         (ulmus/zip
                                           connectable-kvs-$
                                           (:value-$ from-select)))))
@@ -161,8 +165,9 @@
                             (fn [[connectables from to]] 
                               (some
                                 (fn [c]
-                                  (when (some #{to} (get c from))
-                                    (:connection (meta c))))
+                                  (let [c-lookup (into {} (map (fn [[k v]] [(:value k) v]) c))]
+                                    (when (c-lookup from)
+                                      (:connection (meta c)))))
                                 connectables))
                             (ulmus/zip
                               connectables-$
@@ -205,7 +210,7 @@
           ((:recurrent/dom-$ sources)
            ".button.connect" "click"))]
 
-    (ulmus/subscribe! connectables-$ #(println "Connectables: " %))
+    (ulmus/subscribe! connectables-$ #(println "connectables" %))
 
     {:connect-$ connect-$
      :recurrent/dom-$ (ulmus/map (fn [content]

@@ -22,8 +22,9 @@
     (if-let [path-to-inner (get (paths inner) (:kind outer))]
       (with-meta 
         (get-in outer path-to-inner)
-        {:path-to-inner path-to-inner
-         :outer outer}))))
+        (assoc (meta outer)
+               :path-to-inner path-to-inner
+               :outer outer)))))
 
 (defn ordered
   [look-for-first look-for-second a b]
@@ -39,7 +40,10 @@
    :to ["PodTemplateSpec" "Pod"]
    :desc "Requests to this service will be forwarded to the pods on the associated workload."
    :connectables (fn [service pod]
-                   {"metadata.labels" ["spec.selector"]})
+                   {{:label "metadata.labels" 
+                     :value "metadata.labels"}
+                    [{:label "spec.selector"
+                      :value "spec.selector"}]})
    :connect (fn [service pod]
               [(assoc-in service [:spec :selector]
                          (get-in pod [:metadata :labels]))
@@ -56,6 +60,35 @@
 (defconnection Config<->Env
   {:from ["ConfigMap" "Secret"]
    :to ["PodSpec" "Pod"]
+   :desc "A key/value in this ConfigMap or Secret's data will be exposed as an enivronment variable in one of the pods containers."
+   :connect (fn [config pod]
+              [config (update-in (:outer (meta pod))
+                                 (concat (:path-to-inner (meta pod))
+                                         [:containers (:data (meta pod))])
+                                 (fn [c] 
+                                   (assoc c :env [{}])))])
+
+   :connectables
+   (fn [config pod]
+     (let [containers (map-indexed
+                        (fn [idx c]
+                          {:label
+                            (str 
+                              (get-in c [:metadata :name])
+                              " - container[" idx "]")
+                            :value (str idx)})
+                        (:containers pod))
+           kvs (map (fn [[k v]]
+                      {:label
+                       (str
+                         (str (name k)) " : " (str (name v)))
+                       :value {:name (get-in config [:metadata :name])
+                               :key k}})
+                    (:data config))]
+       (into {}
+             (map vector
+                  containers
+                  (repeat kvs)))))
    :connections (fn [config pod]
                   (let [config-name (get-in config [:metadata :name])
                         env (flatten (map :env (:containers pod)))
@@ -67,13 +100,27 @@
 (defconnection Config<->Volume
   {:from ["ConfigMap" "Secret"]
    :to ["PodSpec" "Pod"]
-   :connections (fn [config pod]
-                  (filter
-                    (fn [v]
-                      (let [connected-name (or (get-in v [:secret :secretName])
-                                               (get-in v [:configMap :name]))]
-                        (= connected-name (get-in config [:metadata :name]))))
-                    (:volumes pod)))})
+   :desc "The values in the ConfigMap or Secret will be mounted into the Volume."
+   :connectables
+   (fn [config pod]
+     (let [volumes (map (fn [v]
+                          {:label (get-in v [:metadata :name])
+                           :value v})
+                        (:volumes pod))]
+       (into 
+         {}
+         (map vector
+              volumes
+              (repeat [{:label (str (count (:data config)) " value(s)")
+                        :value config}])))))
+   :connections
+   (fn [config pod]
+     (filter
+       (fn [v]
+         (let [connected-name (or (get-in v [:secret :secretName])
+                                  (get-in v [:configMap :name]))]
+           (= connected-name (get-in config [:metadata :name]))))
+       (:volumes pod)))})
 
 (defconnection PersistentVolumeClaim<->Volume
   {:from ["PersistentVolumeClaim"]

@@ -17,10 +17,13 @@
 (def initial-state
   {:foo {:kind "Deployment"
          :metadata {:name "foo"}
-         :spec {:template {:spec {:containers []}
+         :spec {:template {:spec {:volumes [{:metadata {:name "My Volume"}}]
+                                  :containers [{:metadata {:name "My Container"}}]}
                            :metadata {:labels {:app "foobar"}}}}}
    :baz {:kind "ConfigMap"
-         :metadata {:name "baz"}}
+         :metadata {:name "baz"}
+         :data {:fizz "buzz"
+                :foo "bar"}}
    :bar {:kind "Service"
          :metadata {:name "bar"}}})
 
@@ -106,7 +109,6 @@
         connections-$ (ulmus/distinct
                         (ulmus/map
                           (fn [state]
-
                             (let [with-key (into {} (map (fn [[k v]]
                                                            [k (with-meta v {:key k})]) state))
                                   to-check (map-indexed (fn [i [k v]]
@@ -233,8 +235,11 @@
        (ulmus/signal-of (fn [] (or (:initial-state props) initial-state)))
        (ulmus/map (fn [[[from to] connection from-data to-data]]
                     (println "CONNECTION:" connection)
+                    (println (meta from))
                     (fn [state]
-                      (let [[connected-from connected-to] ((:connect connection) from to)]
+                      (let [[connected-from connected-to] ((:connect connection)
+                                                           (vary-meta from assoc :data from-data)
+                                                           (vary-meta to assoc :data to-data))]
                         (-> state
                             (assoc (:id (meta connected-from)) connected-from)
                             (assoc (:id (meta connected-to)) connected-to)))))

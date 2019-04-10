@@ -75,7 +75,7 @@
      :transform-origin "50% 50%"
      :transition "padding 800ms ease, border 250ms ease"
      :user-select "none"}
-    [:&:hover {:padding "16px"}]
+    [:&:hover {:padding "24px"}]
     [:.outline
      {:background "#fff6c2"
       :border-radius "50%"

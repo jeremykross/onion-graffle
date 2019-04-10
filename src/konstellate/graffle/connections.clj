@@ -7,19 +7,22 @@
   ([n desc fk] `(with-order ~n ~desc ~fk []))
   ([n desc fk default]
    `(fn [from# to# & data#]
-      (with-meta 
-        (apply 
-          (fn [a# b#]
-            (if (not (and a# b#))
-              ~default
-              ((~fk ~desc) a# b#)))
-          (concat
+      (let [order# 
             (konstellate.graffle.connections/ordered
               (:from ~desc)
               (:to ~desc)
-              from# to#)
+              from# to#)]
+      (with-meta 
+        (apply 
+          (fn [a# b# & data1#]
+            (println "Calling: " ~fk)
+            (if (not (and a# b# (~fk ~desc)))
+              ~default
+              (apply (~fk ~desc) a# b# data1#)))
+          (concat
+            order#
             data#))
-        {:connection ~n}))))
+        {:connection ~n})))))
 
 (defmacro make-connection
   [n conn]
