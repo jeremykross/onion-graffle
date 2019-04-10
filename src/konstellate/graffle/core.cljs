@@ -196,7 +196,7 @@
 
 
     modal (components/ConnectionModal {} (assoc (select-keys sources [:recurrent/dom-$])
-                                                :resource-connections-$ resource-connections-$))
+                                                :resource-connections-$ (ulmus/distinct resource-connections-$)))
 
     modal-shown?-$ 
     (ulmus/merge
