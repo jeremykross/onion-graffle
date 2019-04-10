@@ -62,11 +62,13 @@
    :to ["PodSpec" "Pod"]
    :desc "A key/value in this ConfigMap or Secret's data will be exposed as an enivronment variable in one of the pods containers."
    :connect (fn [config pod]
+              (println "Meta:" (meta config))
               [config (update-in (:outer (meta pod))
                                  (concat (:path-to-inner (meta pod))
                                          [:containers (:data (meta pod))])
-                                 (fn [c] 
-                                   (assoc c :env [{}])))])
+                                 (fn [c]
+                                   (assoc c :env [{:name (str (gensym))
+                                                   :valueFrom {:configMapKeyRef (:data (meta config))}}])))])
 
    :connectables
    (fn [config pod]
@@ -76,7 +78,7 @@
                             (str 
                               (get-in c [:metadata :name])
                               " - container[" idx "]")
-                            :value (str idx)})
+                            :value idx})
                         (:containers pod))
            kvs (map (fn [[k v]]
                       {:label
