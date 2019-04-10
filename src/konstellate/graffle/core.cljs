@@ -205,7 +205,7 @@
         (:connect-$ modal))
       (ulmus/map
         (constantly true)
-        valid-connections-$))]
+        (ulmus/filter #(not (empty? %)) (:connectable-kvs-$ modal))))]
 
     {:connections-requests-$ (ulmus/pickmerge :connect-$ (ulmus/distinct (ulmus/map vals nodes-$)))
      :selected-nodes-$ (ulmus/start-with! #{} selected-nodes-$)

@@ -116,8 +116,8 @@
                            (conn/connectables a b))
                          (:resource-connections-$ sources))
 
-        connectable-kvs-$ (ulmus/map #(reduce merge %)
-                                     connectables-$)
+        connectable-kvs-$ (ulmus/distinct (ulmus/map #(reduce merge %)
+                                                     connectables-$))
 
         from-$ (ulmus/map first (:resource-connections-$ sources))
         to-$ (ulmus/map second (:resource-connections-$ sources))
@@ -213,6 +213,7 @@
     (ulmus/subscribe! connectables-$ #(println "connectables" %))
 
     {:connect-$ connect-$
+     :connectable-kvs-$ connectable-kvs-$
      :recurrent/dom-$ (ulmus/map (fn [content]
                                    [:div {:class "modal-underlay"}
                                     [:div {:class "modal"}
